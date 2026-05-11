@@ -12,5 +12,6 @@
 | 2026-05-11 | Phase 1 follow-up | Temporary handoff path removed from operational planning evidence | PASS | Phase context, plan, checkpoint, and summary now cite tracked `.planning/` files instead of machine-local temp files. |
 | 2026-05-11 | Phase 1 follow-up | Codebase planning docs expanded | PASS | Added harness-focused `ARCHITECTURE`, `STACK`, `TESTING`, `INTEGRATIONS`, and `CONCERNS` docs under `.planning/codebase/`. |
 | 2026-05-11 | Phase 1 follow-up | README workflow guide updated | PASS | README now maps slash commands to Roo modes and workflow skills, lists skill purposes, mode ownership, phase gate, and verification commands. |
+| 2026-05-11 | Phase 1 follow-up | Korean README zero-to-done workflow added | PASS | README now explains starting from idea or design docs, discuss/plan/execute/review/done flow, skill usage, and document-centered handoff. |
 
 Add new rows when a phase closes or a cross-phase verification command becomes important.

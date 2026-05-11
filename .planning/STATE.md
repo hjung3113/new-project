@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
-status: Phase 1 implemented - document-centered continuity, Roo planning scopes, and README workflow guide are aligned
-last_updated: "2026-05-11T14:42:18.000Z"
+status: Phase 1 implemented - Korean README now documents full zero-to-done workflow
+last_updated: "2026-05-11T14:47:08.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -24,7 +24,7 @@ progress:
 
 - **Phase**: 1 - Document-Centered Phase Continuity **IMPLEMENTED**.
 - **Plan**: 01-01 complete - `.planning/` memory, active phase folder, checkpoint protocol, gate alignment docs, and refreshed handoff.
-- **Status**: Durable project memory now lives under `.planning/`. Roo planning modes can maintain `.planning/`, implementation modes cannot edit it, README documents command-to-skill workflow usage, and the previous handoff should be treated as transition context only.
+- **Status**: Durable project memory now lives under `.planning/`. Roo planning modes can maintain `.planning/`, implementation modes cannot edit it, and README now documents the Korean zero-to-done workflow from initial idea/design documents through planning, execution, review, and completion.
 - **Progress**: Phase 1: 1/1 plan complete; 1/4 phases overall.
 
 ## Active Checkpoint
@@ -42,7 +42,7 @@ progress:
 - Every phase closes with summary and verification evidence.
 - Handoff documents should reference durable docs and avoid duplicating phase content.
 - Roo `architect` and `docs-issues` modes own `.planning/` edits; implementation modes must not mutate durable planning memory.
-- README is the human entry guide for skills, workflows, modes, phase gate, and verification commands.
+- README is the Korean human entry guide for skills, workflows, modes, phase gate, zero-to-done operating flow, and verification commands.
 
 ### Outstanding open questions
 
