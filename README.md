@@ -12,6 +12,7 @@
 - SQL, migration, writer, transaction, restart, idempotency는 mock이나 SQLite가 아니라 `testcontainers-dotnet` + 실제 MSSQL 컨테이너로 검증합니다.
 - `.planning/`은 영속적인 프로젝트 기억입니다. `.scratch/phase-state.json`은 현재 phase에서 허용된 작업을 나타내는 live gate일 뿐입니다.
 - planning 문서, Roo 설정, tracker, application code의 소유권을 mode별로 분리합니다.
+- [AGENTS.md](AGENTS.md)에는 [andrej-karpathy-skills의 CLAUDE.md](https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md)를 참고한 coding conduct 규칙을 추가했습니다.
 
 ## 새 세션 시작 순서
 
