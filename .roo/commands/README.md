@@ -1,0 +1,16 @@
+# Roo Slash Commands
+
+These commands are the user-facing entry points for the template.
+
+| Command | Mode | Purpose |
+| --- | --- | --- |
+| `/feature` | `orchestrator` | Route ordinary application behavior or refactoring into the TDD workflow when no narrower owner applies. |
+| `/bugfix` | `orchestrator` | Run the root-cause workflow for broken behavior, failing tests, wrong output, regressions, or unknown cause. |
+| `/etl` | `orchestrator` | Run the ETL workflow for parser, normalization, correction, state, matching, merge, buffering, writer flow, replay, or restart safety. |
+| `/db` | `orchestrator` | Run the DB workflow for MSSQL schema, EF migration, SQL, indexes, transactions, Dapper, `SqlBulkCopy`, `MERGE`, or persistence migrations. |
+| `/ops` | `orchestrator` | Route operational work for logs, metrics, processing events, retry boundaries, worker polling, graceful shutdown, dashboards, or runbooks. |
+| `/adr` | `architect` | Run the architecture workflow for durable design decisions, boundaries, state models, tradeoffs, or implementation planning. |
+| `/review` | `review` | Run the read-only review workflow for code, SQL, ETL, tests, performance, or operations risk. |
+| `/issues` | `docs-issues` | Convert docs and plans into PRDs, local tracker issues, acceptance criteria, and implementation slices. |
+
+Slash commands stay thin. Use `.roo/rules-orchestrator/rules.md` for exclusive routing and tie breakers; use the workflow skill or owning mode for the actual sequence.

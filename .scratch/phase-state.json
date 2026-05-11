@@ -1,0 +1,44 @@
+{
+  "phase": "done",
+  "plan_id": "document-continuity-01-01",
+  "approved": true,
+  "approved_by": "human",
+  "approved_at": "2026-05-11T00:00:00Z",
+  "summary": "Add durable .planning project memory so fresh sessions can resume phase-by-phase after reset.",
+  "plan_path": ".planning/phases/01-document-centered-phase-continuity/01-01-PLAN.md",
+  "state_path": ".planning/STATE.md",
+  "checkpoint_path": ".planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md",
+  "current_checkpoint": "CP-01-05",
+  "next_action": "Start Phase 2 by creating .planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md after choosing pre-commit, CI, or both.",
+  "allowed_paths": [
+    ".planning/",
+    ".scratch/phase-state.json",
+    ".scratch/phase-state.schema.json",
+    ".scratch/phase-state.example.json",
+    "AGENTS.md",
+    "README.md",
+    "docs/phase-gate-harness.md"
+  ],
+  "blocked_paths": [
+    "src/",
+    "tests/"
+  ],
+  "acceptance_criteria": [
+    ".planning/STATE.md identifies the current phase, checkpoint, next action, and files of record.",
+    ".planning/ROADMAP.md lists phase boundaries and success criteria.",
+    "The active phase folder contains context, plan, checkpoints, review, verification, and summary.",
+    "AGENTS.md and docs/phase-gate-harness.md tell future sessions how .planning and .scratch/phase-state.json interact.",
+    "The temporary handoff points to durable planning docs instead of being the only continuity artifact."
+  ],
+  "verification": [
+    "find .planning -maxdepth 3 -type f | sort",
+    "npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.json",
+    "rg -n \"STATE.md|phase-state|checkpoint\" AGENTS.md README.md docs/phase-gate-harness.md .planning"
+  ],
+  "notes": [
+    "Phase 1 is documentation and harness-state work only.",
+    "Mechanical path enforcement remains Phase 2."
+  ],
+  "updated_at": "2026-05-11T00:00:00Z",
+  "updated_by": "codex"
+}

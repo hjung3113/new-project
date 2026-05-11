@@ -1,0 +1,24 @@
+# Global Rules
+
+- Target C# on .NET 10 unless a project explicitly says otherwise.
+- Target Microsoft SQL Server for persistence unless a project explicitly says otherwise.
+- Use pipeline-first Clean Architecture for ETL systems.
+- Use EF Core by default for data access and schema evolution.
+- Use Dapper only for documented complex or performance-sensitive read-query exceptions.
+- Use xUnit, FluentAssertions, and NSubstitute for tests.
+- Check `.roo/rules/phase-gate.md` before implementation workflows; no editable implementation work starts unless phase state is `execute`, `approved=true`, and tied to an approved `plan_id`.
+- Use `testcontainers-dotnet` with real MSSQL containers for SQL, migration, EF Core query, Dapper query, writer, restart, idempotency, and transaction behavior.
+- Do not use in-memory providers, mocked repositories, or SQLite as proof for MSSQL behavior.
+- Follow TDD for implementation: red evidence before production edits, smallest green change, record green evidence, then refactor.
+- Do not defer tests for later when changing behavior.
+- Do not implement domain code when the request is to configure Roo, modes, skills, or workflow orchestration.
+- Do not implement NewParser or any sample/reference project unless the active repository explicitly requests that implementation work.
+- For ETL work, use the canonical stage order: source -> parse -> normalize -> state -> merge -> buffer -> write -> observe.
+- Row-by-row ETL writes are forbidden by default. Use SqlBulkCopy to staging plus set-based MERGE/upsert; any exception requires documented reviewer approval with volume limits and rationale.
+- Use parameterized SQL only; string-concatenated dynamic SQL is forbidden.
+- Define MSSQL transaction boundaries before implementing schema, query, migration, or writer changes.
+- Preserve source traceability in ETL outputs: source file, source line, equipment/job identifiers, and processing stage where applicable.
+- Require explicit state transitions, idempotent writes, restart safety, and replay behavior over implicit side effects.
+- Model ETL backpressure with bounded buffers, flush thresholds, cancellation, retry boundaries, and failure visibility.
+- Read project documentation before editing: AGENTS.md, CONTEXT.md, docs/agents, docs/adr, and referenced PRDs when present.
+- Keep changes scoped to the requested workflow.
