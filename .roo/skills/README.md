@@ -4,6 +4,7 @@ Workflow skills are the main entry point once a command or mode has been chosen.
 
 | Skill | Command | Mode | Sequence |
 | --- | --- | --- | --- |
+| `workflow-simple-task` | `/simple` | owning mode | classify type -> answer/edit/run minimally -> targeted verification -> report |
 | `workflow-feature-tdd` | `/feature` | `tdd-code` | scope -> tests -> implementation -> review |
 | `workflow-bug-diagnosis` | `/bugfix` | `diagnose` | reproduce -> minimize -> root cause -> regression test -> fix |
 | `workflow-etl-pipeline` | `/etl` | `etl-pipeline` | contract -> stages -> ordering/state -> tests -> implement -> review |

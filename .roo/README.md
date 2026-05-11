@@ -6,6 +6,7 @@ It configures Roo workflows, modes, rules, slash commands, and workflow skills. 
 
 ## Intended Entry Points
 
+- Use `/simple` for focused questions, small low-risk edits, docs tweaks, harmless command runs, mechanical cleanup, and tiny locally verified changes that do not need the full phase workflow.
 - Use `/feature` for ordinary implementation work.
 - Use `/bugfix` when behavior is broken, tests fail, or a regression needs a root-cause pass.
 - Use `/etl` for parser, normalization, state, merge, buffering, backpressure, and write orchestration.
@@ -38,5 +39,6 @@ It configures Roo workflows, modes, rules, slash commands, and workflow skills. 
 - General implementation modes cannot edit docs, durable planning files, tracker files, phase state, `AGENTS.md`, `CLAUDE.md`, `.roo/**`, `.roomodes`, `README.md`, or `.rooignore`.
 - `harness-maintainer` is the only mode intended to edit Roo harness, phase approval state, and agent-control files.
 - Slash commands are entry points only. Keep sequence and tie breakers in `.roo/rules-orchestrator/rules.md` and workflow skills.
+- `/simple` still respects owner permissions, specialist routing, and focused verification; it only shortens the process for qualifying low-risk tasks.
 
 See the sibling READMEs for the command and workflow-skill catalogs.
