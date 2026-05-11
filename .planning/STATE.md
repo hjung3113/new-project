@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
 status: Phase 1 implemented - Korean README now documents full zero-to-done workflow
-last_updated: "2026-05-11T14:47:08.000Z"
+last_updated: "2026-05-11T17:20:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -29,7 +29,7 @@ progress:
 
 ## Active Checkpoint
 
-- **Checkpoint**: CP-01-05 - Handoff refreshed.
+- **Checkpoint**: CP-01-06 - ROO-7 enforcement-channel decision captured.
 - **Checkpoint file**: `.planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md`.
 - **Restart instruction**: Read this file, then `ROADMAP.md`, then the active phase checkpoint file. If starting Phase 2, create `.planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md` before planning implementation.
 
