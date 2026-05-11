@@ -20,5 +20,6 @@
 - Preserve source traceability in ETL outputs: source file, source line, equipment/job identifiers, and processing stage where applicable.
 - Require explicit state transitions, idempotent writes, restart safety, and replay behavior over implicit side effects.
 - Model ETL backpressure with bounded buffers, flush thresholds, cancellation, retry boundaries, and failure visibility.
-- Read project documentation before editing: AGENTS.md, CONTEXT.md, docs/agents, docs/adr, and referenced PRDs when present.
+- Read durable planning state before editing: AGENTS.md, .planning/STATE.md, .planning/ROADMAP.md, the active .planning/phases/*/*-CHECKPOINTS.md, then .scratch/phase-state.json.
+- Read project documentation before editing: CONTEXT.md, docs/agents, docs/adr, and referenced PRDs when present.
 - Keep changes scoped to the requested workflow.

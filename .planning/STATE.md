@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
-status: Phase 1 implemented - document-centered continuity scaffold is in place
-last_updated: "2026-05-11T00:00:00.000Z"
+status: Phase 1 implemented - document-centered continuity, Roo planning scopes, and README workflow guide are aligned
+last_updated: "2026-05-11T14:42:18.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -24,7 +24,7 @@ progress:
 
 - **Phase**: 1 - Document-Centered Phase Continuity **IMPLEMENTED**.
 - **Plan**: 01-01 complete - `.planning/` memory, active phase folder, checkpoint protocol, gate alignment docs, and refreshed handoff.
-- **Status**: Durable project memory now lives under `.planning/`. The previous handoff file should be treated as updated transition context, not the source of truth.
+- **Status**: Durable project memory now lives under `.planning/`. Roo planning modes can maintain `.planning/`, implementation modes cannot edit it, README documents command-to-skill workflow usage, and the previous handoff should be treated as transition context only.
 - **Progress**: Phase 1: 1/1 plan complete; 1/4 phases overall.
 
 ## Active Checkpoint
@@ -41,6 +41,8 @@ progress:
 - `.scratch/phase-state.json` is a live phase gate and must point to `.planning/` docs.
 - Every phase closes with summary and verification evidence.
 - Handoff documents should reference durable docs and avoid duplicating phase content.
+- Roo `architect` and `docs-issues` modes own `.planning/` edits; implementation modes must not mutate durable planning memory.
+- README is the human entry guide for skills, workflows, modes, phase gate, and verification commands.
 
 ### Outstanding open questions
 
@@ -69,6 +71,13 @@ Files of record:
 - `.planning/DECISIONS.md`
 - `.planning/HANDOFF-PROTOCOL.md`
 - `.planning/VERIFICATION.md`
+- `.planning/codebase/ARCHITECTURE.md`
+- `.planning/codebase/STACK.md`
+- `.planning/codebase/STRUCTURE.md`
+- `.planning/codebase/CONVENTIONS.md`
+- `.planning/codebase/TESTING.md`
+- `.planning/codebase/INTEGRATIONS.md`
+- `.planning/codebase/CONCERNS.md`
 - `.scratch/phase-state.json`
 - `.planning/phases/01-document-centered-phase-continuity/01-CONTEXT.md`
 - `.planning/phases/01-document-centered-phase-continuity/01-01-PLAN.md`

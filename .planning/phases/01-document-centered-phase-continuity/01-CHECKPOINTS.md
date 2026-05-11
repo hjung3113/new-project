@@ -27,5 +27,5 @@
 ## CP-01-05 - Handoff refreshed
 
 - **Status**: Complete.
-- **Evidence**: `/var/folders/6t/ddmgth_n47j1dq_mwk8lm6700000gn/T/handoff-XXXXXX.md.5qgrROeCyZ`.
+- **Evidence**: `.planning/HANDOFF-PROTOCOL.md`, `.planning/STATE.md`, `.planning/phases/01-document-centered-phase-continuity/01-01-SUMMARY.md`.
 - **Restart**: Treat the handoff as a pointer to `.planning`, not as the canonical plan.

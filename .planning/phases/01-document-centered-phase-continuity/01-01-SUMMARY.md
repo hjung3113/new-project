@@ -20,7 +20,7 @@
 | Active phase folder is complete | `.planning/phases/01-document-centered-phase-continuity/` |
 | New sessions have a first read | `AGENTS.md`, `.planning/codebase/CONVENTIONS.md` |
 | Phase gate aligns with docs | `docs/phase-gate-harness.md`, `.scratch/phase-state.schema.json` |
-| Handoff no longer carries sole memory | `/var/folders/6t/ddmgth_n47j1dq_mwk8lm6700000gn/T/handoff-XXXXXX.md.5qgrROeCyZ` |
+| Handoff no longer carries sole memory | `.planning/HANDOFF-PROTOCOL.md`, `.planning/STATE.md` |
 
 ## Next Phase Candidate
 

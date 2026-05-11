@@ -7,7 +7,7 @@
 
 The user asked to verify and revise the work so it is split by phase, has step-by-step checkpoints, and can continue after a session reset. The review must use `/Users/hyojung/Desktop/2026/vocpage/.planning` as the benchmark for document-centered management.
 
-The existing handoff at `/var/folders/6t/ddmgth_n47j1dq_mwk8lm6700000gn/T/handoff-XXXXXX.md.5qgrROeCyZ` focused on Roo/C# ETL harness hardening, but it did not provide a project-level `.planning/` memory or a phase-local checkpoint protocol.
+The pre-existing temporary handoff focused on Roo/C# ETL harness hardening, but it did not provide a project-level `.planning/` memory or a phase-local checkpoint protocol.
 
 </domain>
 

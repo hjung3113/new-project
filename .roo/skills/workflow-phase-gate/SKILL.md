@@ -8,16 +8,21 @@ description: Runs the external phase gate for low-reasoning models: discuss is r
 
 Use this workflow before implementation to prevent accidental work before the user or orchestrator has approved a plan.
 
-State lives outside the prompt in `.scratch/phase-state.json` or another file that follows `.scratch/phase-state.schema.json`.
+State lives outside the prompt in `.scratch/phase-state.json` or another file that follows `.scratch/phase-state.schema.json`. Durable project memory lives under `.planning/`; the live state file is a gate pointer, not the source of planning context.
 
 ## Required State Check
 
 Before doing any work:
 
-1. Read the phase state file if one exists.
-2. Identify `phase`, `plan_id`, `approved`, `allowed_paths`, and `verification`.
-3. If there is no state file, start in `discuss`.
-4. Do only the work allowed by the current phase.
+1. Read `AGENTS.md`.
+2. Read `.planning/STATE.md`.
+3. Read `.planning/ROADMAP.md`.
+4. Read the active phase checkpoint file named in `.planning/STATE.md`.
+5. Read the phase state file if one exists.
+6. Identify `phase`, `plan_id`, `approved`, `state_path`, `plan_path`, `checkpoint_path`, `current_checkpoint`, `allowed_paths`, and `verification`.
+7. For `plan`, `execute`, and `done`, read `state_path`, `plan_path`, and `checkpoint_path` before classifying allowed work. If any pointer is missing or stale, treat the state as incomplete and return to `plan`.
+8. If there is no state file, start in `discuss`.
+9. Do only the work allowed by the current phase.
 
 ## Phase Rules
 

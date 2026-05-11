@@ -38,6 +38,30 @@
 - **Risk**: The handoff claimed `/ops` routes through orchestration, but the command frontmatter selected `ops-observability` directly.
 - **Resolution**: Updated `.roo/commands/ops.md` to `mode: orchestrator`, matching the other implementation commands.
 
+### Finding 7 - Roo edit scopes inverted `.planning` ownership
+
+- **Severity**: Blocking before safe Roo use.
+- **Risk**: `architect` and `docs-issues` could not edit `.planning/`, while implementation modes could. That allowed code modes to mutate canonical planning memory and blocked planning modes from maintaining phase checkpoints.
+- **Resolution**: Updated `.roomodes` so `architect` and `docs-issues` may edit `.planning/`, and implementation modes explicitly exclude `.planning/`.
+
+### Finding 8 - Phase-gate workflow could skip durable planning context
+
+- **Severity**: High.
+- **Risk**: Roo agents could follow `.scratch/phase-state.json` without first reading `.planning/STATE.md`, `.planning/ROADMAP.md`, and active checkpoints.
+- **Resolution**: Updated `.roo/rules/global.md`, `.roo/rules/phase-gate.md`, and `.roo/skills/workflow-phase-gate/SKILL.md` to require the durable restart chain before trusting the live gate.
+
+### Finding 9 - Domain docs fallback could hide `.planning`
+
+- **Severity**: Medium.
+- **Risk**: `docs/agents/domain.md` told agents to proceed silently when `CONTEXT.md` and ADRs are absent, which could train agents to miss `.planning/` as the actual context source.
+- **Resolution**: Added a repo-specific `.planning/` context note to `docs/agents/domain.md`.
+
+### Finding 10 - Temporary handoff path was not durable evidence
+
+- **Severity**: Low.
+- **Risk**: Phase documents cited a machine-local temporary handoff path that may be cleaned up and is not portable.
+- **Resolution**: Replaced temp-path evidence with tracked `.planning/` artifacts.
+
 ## Remaining Risks
 
 - Phase gate enforcement is still prompt-level until Phase 2 adds mechanical checks.

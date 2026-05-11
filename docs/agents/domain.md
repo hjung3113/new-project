@@ -10,6 +10,15 @@ How the engineering skills should consume this repo's domain documentation when 
 
 If any of these files don't exist, proceed silently. Don't flag their absence; don't suggest creating them upfront. The producer skill (`/grill-with-docs`) creates them lazily when terms or decisions actually get resolved.
 
+## Repo-specific planning memory
+
+This repository intentionally uses `.planning/` as the durable project context even when root `CONTEXT.md` or ADRs are absent. Before treating missing domain docs as missing context, read:
+
+- `.planning/PROJECT.md`
+- `.planning/DECISIONS.md`
+- `.planning/STATE.md`
+- the active phase context under `.planning/phases/`
+
 ## File structure
 
 Single-context repo (most repos):

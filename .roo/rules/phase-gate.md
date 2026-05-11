@@ -1,10 +1,11 @@
 # Phase Gate Rule
 
-Use `.scratch/phase-state.schema.json` for external phase state. Implementation workflows must pass this gate before editable work starts.
+Use `.scratch/phase-state.schema.json` for external phase state. Durable phase memory lives under `.planning/`; fresh sessions read `.planning/STATE.md`, `.planning/ROADMAP.md`, and the active phase checkpoint before trusting the live gate file. Implementation workflows must pass this gate before editable work starts.
 
 ## Required Behavior
 
 - Default to `discuss` when no phase state is present.
+- Treat `.planning/STATE.md` and the active `.planning/phases/*/*-CHECKPOINTS.md` as the restart source of truth; `.scratch/phase-state.json` is only the live gate pointer.
 - Treat `discuss` as read-only discovery.
 - Treat `plan` as documentation, ADR, PRD, checklist, or issue-plan work only.
 - Treat `execute` as implementation only after the state cites the approved `plan_id`, has `approved=true`, defines non-empty `allowed_paths`, and defines non-empty `verification`.

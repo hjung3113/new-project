@@ -8,6 +8,9 @@
   REQUIREMENTS.md
   ROADMAP.md
   STATE.md
+  DECISIONS.md
+  HANDOFF-PROTOCOL.md
+  VERIFICATION.md
   codebase/
   intel/
   phases/
@@ -41,6 +44,11 @@ Add more `NN-02-PLAN.md` and `NN-02-SUMMARY.md` files when a phase requires mult
 .scratch/
   phase-state.schema.json
   phase-state.example.json
+  phase-state.json
+docs/
+  agents/
+  phase-gate-harness.md
+  roo-orchestration-design.md
 ```
 
 `.scratch/phase-state.json` should exist once a repo has an active or completed gated phase. It is the live gate pointer back to `.planning/`, not the full project memory.

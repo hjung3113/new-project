@@ -34,8 +34,8 @@ It configures Roo workflows, modes, rules, slash commands, and workflow skills. 
 ## Routing Boundaries
 
 - `/review` is read-only and has no shell command access.
-- `architect` and `docs-issues` can write only `docs/` and `.scratch/` planning/tracker files; agent-control files and `.scratch/phase-state*.json` are excluded.
-- General implementation modes cannot edit docs, tracker files, phase state, `AGENTS.md`, `CLAUDE.md`, `.roo/**`, `.roomodes`, `README.md`, or `.rooignore`.
+- `architect` and `docs-issues` can write only `docs/`, `.planning/`, and `.scratch/` tracker files; agent-control files and `.scratch/phase-state*.json` are excluded.
+- General implementation modes cannot edit docs, durable planning files, tracker files, phase state, `AGENTS.md`, `CLAUDE.md`, `.roo/**`, `.roomodes`, `README.md`, or `.rooignore`.
 - `harness-maintainer` is the only mode intended to edit Roo harness, phase approval state, and agent-control files.
 - Slash commands are entry points only. Keep sequence and tie breakers in `.roo/rules-orchestrator/rules.md` and workflow skills.
 

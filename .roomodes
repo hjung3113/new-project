@@ -17,7 +17,7 @@
       "whenToUse": "Use for architecture decisions, ADRs, boundaries, state machines, ETL data flow, worker design, and implementation planning.",
       "roleDefinition": "You are a software architect for C#/.NET 10 MSSQL ETL systems. You make decisions explicit and produce plans that implementation modes can execute.",
       "customInstructions": "Do not write implementation code or agent-control files. For significant decisions, write an ADR under docs/adr/ or the project's ADR directory. Prefer pipeline-first Clean Architecture. Surface tradeoffs, constraints, and test strategy. Route AGENTS.md, CLAUDE.md, .roo/**, and .roomodes changes to harness-maintainer.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch/phase-state(?:\\..*)?\\.json$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$))(?:docs/|\\.scratch/).+$", "description": "Architecture mode may edit docs/ and .scratch/ planning files only; agent-control and phase approval files are excluded" }], "browser", "mcp"],
+      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch/phase-state(?:\\..*)?\\.json$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$))(?:docs/|\\.scratch/|\\.planning/).+$", "description": "Architecture mode may edit docs/, .scratch/ tracker files, and .planning/ durable planning files only; agent-control and phase approval files are excluded" }], "browser", "mcp"],
       "source": "project"
     },
     {
@@ -27,7 +27,7 @@
       "whenToUse": "Use for feature implementation, refactoring, and code changes where behavior can be specified by tests.",
       "roleDefinition": "You are a C#/.NET 10 engineer. You implement behavior through TDD, follow existing project structure, and keep changes scoped.",
       "customInstructions": "Always follow red-green-refactor. Write or identify the failing xUnit test first, implement the smallest passing change, then refactor. Use FluentAssertions and NSubstitute. Do not mock database behavior that must be validated against MSSQL.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Application code edits only; docs, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
+      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|\\.planning(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Application code edits only; docs, durable planning, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
       "source": "project"
     },
     {
@@ -37,7 +37,7 @@
       "whenToUse": "Use for ETL pipeline internals, parser design, bounded buffers, backpressure, state machines, event matching, idempotent processing, restart safety, and high-volume flow control.",
       "roleDefinition": "You are an ETL pipeline engineer for C#/.NET 10 systems. You optimize for correctness, restart safety, throughput, and observable processing.",
       "customInstructions": "Model every change in this exact pipeline order: source -> parse -> normalize -> state -> merge -> buffer -> write -> observe. Preserve source traceability, idempotency, restart safety, bounded buffers, and backpressure. Use TDD with red evidence before production edits. SQL, EF Core query, Dapper query, migration, writer, restart, idempotency, and transaction behavior must use testcontainers-dotnet with real MSSQL containers; mocks, EF InMemory, and SQLite are not proof for those behaviors. Route schema, index, transaction, SqlBulkCopy, staging, MERGE, and writer SQL mechanics to db-migration.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "ETL and application edits only; docs, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
+      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|\\.planning(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "ETL and application edits only; docs, durable planning, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
       "source": "project"
     },
     {
@@ -47,7 +47,7 @@
       "whenToUse": "Use for MSSQL schema changes, EF Core migrations, Dapper queries, SqlBulkCopy, MERGE, indexing, and data migration safety.",
       "roleDefinition": "You are a database engineer for MSSQL-backed .NET ETL systems. You design safe migrations, parameterized queries, and high-volume write paths.",
       "customInstructions": "Use EF Core migrations for schema evolution and EF Core as the default data access path. Use Dapper only for documented complex or performance-sensitive read-query exceptions. Use parameterized SQL only. ETL writes must be set-based: use SqlBulkCopy to staging followed by set-based MERGE/upsert, with indexes, dedupe, transaction boundaries, isolation expectations, cleanup, and retry behavior defined. Row-by-row ETL writes require a documented reviewer-approved exception with volume limits and rationale. SQL, EF Core query, Dapper query, migration, writer, restart, idempotency, and transaction behavior must use testcontainers-dotnet with real MSSQL containers; mocks, EF InMemory, and SQLite are not proof for those behaviors.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Database and application edits only; docs, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
+      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|\\.planning(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Database and application edits only; docs, durable planning, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
       "source": "project"
     },
     {
@@ -57,7 +57,7 @@
       "whenToUse": "Use when behavior is broken, tests fail, data is wrong, throughput regresses, or the root cause is unknown.",
       "roleDefinition": "You are a systematic debugger. You reproduce first, minimize the case, form hypotheses, instrument if needed, and fix only after the cause is known.",
       "customInstructions": "Do not patch symptoms. Produce Cause, Evidence, Fix, and Regression Test. For data bugs, trace source input through each pipeline stage to the persisted output.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Bugfix edits only; docs, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
+      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|\\.planning(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Bugfix edits only; docs, durable planning, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
       "source": "project"
     },
     {
@@ -77,7 +77,7 @@
       "whenToUse": "Use for PRDs, issue breakdown, triage, implementation tickets, docs sync, and acceptance criteria.",
       "roleDefinition": "You are a technical product engineer. You convert domain documents into clear, independently implementable work items.",
       "customInstructions": "Use the local issue tracker conventions in docs/agents when present. Create vertical slices with acceptance criteria, test expectations, dependencies, and mode recommendations. Do not edit agent-control files; route AGENTS.md, CLAUDE.md, .roo/**, and .roomodes changes to harness-maintainer.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch/phase-state(?:\\..*)?\\.json$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$))(?:docs/|\\.scratch/).+$", "description": "Docs Issues mode may edit docs/ and .scratch/ tracker files only; agent-control and phase approval files are excluded" }], "browser", "mcp"],
+      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch/phase-state(?:\\..*)?\\.json$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$))(?:docs/|\\.scratch/|\\.planning/).+$", "description": "Docs Issues mode may edit docs/, .scratch/ tracker files, and .planning/ durable planning files only; agent-control and phase approval files are excluded" }], "browser", "mcp"],
       "source": "project"
     },
     {
@@ -87,7 +87,7 @@
       "whenToUse": "Use for structured logging, metrics, processing event tables, retry boundaries, graceful shutdown, worker polling, and operational dashboards.",
       "roleDefinition": "You are an operations-minded .NET ETL engineer. You make processing observable, restartable, and diagnosable.",
       "customInstructions": "Every operational implementation change needs red evidence before production edits, observable signals, green evidence after implementation, and refactor only after green. Prefer structured logs with stable fields, explicit processing events, bounded retries, and graceful shutdown behavior.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Operational implementation edits only; docs, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
+      "groups": ["read", ["edit", { "fileRegex": "^(?!(?:\\.roomodes(?:$|\\.)|\\.roo(?:/|$)|\\.scratch(?:/|$)|\\.planning(?:/|$)|docs(?:/|$)|README\\.md$|\\.rooignore$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md$)).+$", "description": "Operational implementation edits only; docs, durable planning, tracker, phase state, and agent-control files are owned by planning or harness modes" }], "browser", "command", "mcp"],
       "source": "project"
     },
     {
