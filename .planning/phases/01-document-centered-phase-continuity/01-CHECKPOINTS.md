@@ -29,3 +29,9 @@
 - **Status**: Complete.
 - **Evidence**: `.planning/HANDOFF-PROTOCOL.md`, `.planning/STATE.md`, `.planning/phases/01-document-centered-phase-continuity/01-01-SUMMARY.md`.
 - **Restart**: Treat the handoff as a pointer to `.planning`, not as the canonical plan.
+
+## CP-01-06 - Phase 2 enforcement-channel decision captured
+
+- **Status**: Complete.
+- **Evidence**: `.scratch/phase-2-gates/issues/01-enforcement-channel.md`.
+- **Restart**: Proceed to ROO-8 (`allowed_paths` semantics), then start Phase 2 context/plan documents.
