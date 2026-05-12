@@ -931,7 +931,7 @@ merged_out = {
 }
 Path('graphify-out/.graphify_extract.json').write_text(json.dumps(merged_out))
 print(f'[graphify update] Merged extraction written ({len(merged_out[\"nodes\"])} nodes, {len(merged_out[\"edges\"])} edges)')
-" 
+"
 ```
 
 Then run Steps 4–8 on the merged graph as normal.
