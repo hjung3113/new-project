@@ -4,14 +4,6 @@ Workflow skills are the main entry point once a command or mode has been chosen.
 
 | Skill | Command | Mode | Sequence |
 | --- | --- | --- | --- |
-| `csharp-async` | manual | C#/.NET work | async naming -> return types -> exception handling -> cancellation |
-| `database-migration` | manual | database work | schema changes -> data moves -> rollback -> zero-downtime checks |
-| `dotnet-backend-patterns` | manual | C#/.NET backend work | architecture -> DI -> persistence -> testing patterns |
-| `dotnet-best-practices` | manual | C#/.NET review | documentation -> architecture -> DI -> validation -> testing |
-| `find-skills` | manual | skill discovery | search -> evaluate -> install or document |
-| `graphify` | `/graphify` | knowledge graph work | ingest -> extract -> cluster -> report -> export |
-| `sql-code-review` | manual | SQL review | security -> performance -> maintainability -> platform checks |
-| `using-my-dotfiles` | manual | environment routing | classify task -> choose external skill/tool -> fallback |
 | `workflow-simple-task` | `/simple` | owning mode | classify type -> answer/edit/run minimally -> targeted verification -> report |
 | `workflow-feature-tdd` | `/feature` | `tdd-code` | scope -> tests -> implementation -> review |
 | `workflow-bug-diagnosis` | `/bugfix` | `diagnose` | reproduce -> minimize -> root cause -> regression test -> fix |
@@ -22,6 +14,5 @@ Workflow skills are the main entry point once a command or mode has been chosen.
 | `workflow-code-review` | `/review` | `review` | scope -> correctness -> SQL/persistence -> tests -> operations -> findings |
 | `workflow-docs-to-issues` | `/issues` | `docs-issues` | source docs -> PRD -> vertical slices -> metadata |
 | `workflow-phase-gate` | manual | any gated workflow | discuss -> plan -> execute -> done |
-| `gated-team-dev` | manual | any implementation workflow | architect -> implementers -> db review -> code review -> tests |
 
 Use these skills instead of ad hoc orchestration when a request fits a known workflow.
