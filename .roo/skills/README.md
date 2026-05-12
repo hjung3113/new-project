@@ -14,5 +14,6 @@ Workflow skills are the main entry point once a command or mode has been chosen.
 | `workflow-code-review` | `/review` | `review` | scope -> correctness -> SQL/persistence -> tests -> operations -> findings |
 | `workflow-docs-to-issues` | `/issues` | `docs-issues` | source docs -> PRD -> vertical slices -> metadata |
 | `workflow-phase-gate` | manual | any gated workflow | discuss -> plan -> execute -> done |
+| `gated-team-dev` | manual | any implementation workflow | architect -> implementers -> db review -> code review -> tests |
 
 Use these skills instead of ad hoc orchestration when a request fits a known workflow.

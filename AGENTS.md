@@ -1,5 +1,9 @@
 ## Agent skills
 
+Project-local custom skills live under `.agents/skills/`. Keep project-specific skills there instead of installing them globally under `~/.agents/skills`.
+
+Roo workflow skills live under `.roo/skills/`.
+
 ### Issue tracker
 
 Issues and PRDs are tracked as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
