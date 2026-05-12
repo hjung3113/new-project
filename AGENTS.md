@@ -1,8 +1,6 @@
 ## Agent skills
 
-Project-local custom skills live under `.agents/skills/`. Keep project-specific skills there instead of installing them globally under `~/.agents/skills`.
-
-Roo workflow skills live under `.roo/skills/`.
+Project-local Roo skills live under `.roo/skills/`. Keep project-specific skills there instead of installing them globally under `~/.agents/skills`.
 
 ### Issue tracker
 
