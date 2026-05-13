@@ -17,11 +17,24 @@ The owning mode must reload durable context from `.planning/` and `.scratch/phas
 
 If the task cannot proceed because planning context is missing, stale, placeholder-only, or outside the approved phase gate, return `needs-plan` instead of guessing.
 
+## DB Context Snapshot
+
+When the task depends on actual output tables, staging tables, merge keys, indexes, stored procedures, functions, SQL Agent jobs, writer behavior, idempotency, replay, reprocess, or restart-safety, read `.db-context/latest.json` before making conclusions.
+
+Use `.db-context/routines.index.json` to locate writer-facing stored procedures, functions, and views. Use `.db-context/routines.sql` for exact SQL control-flow review. Use `.db-context/jobs.md` if ETL execution depends on SQL Agent jobs or schedules.
+
+Do not connect to the database by default. If `.db-context/` exists, use it as the source of truth. Only run `python scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
+
+If DB context is required but missing, stale, or insufficient, return `needs-db-context` instead of guessing or refreshing automatically.
+
+The expected database model is one master database and many process databases. Process databases are expected to share the same schema shape; check `process_database_comparison` before assuming a process DB schema is representative.
+
 ## Steps
 
 1. Define the data contract.
    - Run `workflow-phase-gate` first. Stop before implementation unless phase state is `execute`, `approved=true`, and tied to the approved `plan_id`.
    - Identify source format, normalized record, output table/model, and traceability fields.
+   - Read process DB schema context when output table/model or writer assumptions depend on actual DB shape.
    - Include source traceability fields in the contract: source file, source line or offset, source record id when available, equipment/job identifiers, and processing stage.
    - Keep core pipeline records strongly typed.
    - Stop if the request is only architectural planning; route to `architecture-decision`.
@@ -34,6 +47,7 @@ If the task cannot proceed because planning context is missing, stale, placehold
 3. Decide ordering and state.
    - Specify lookahead, TTL, matching keys, state transitions, and restart behavior.
    - Make idempotency, duplicate handling, replay, and reprocess behavior explicit.
+   - Cross-check matching keys, uniqueness, staging, and writer assumptions against `.db-context/` when available.
    - Define backpressure behavior before implementation: bounded buffers, flush size, flush interval, cancellation, retry boundaries, and failure visibility.
    - Define failure visibility and replay expectations before implementation.
 
@@ -56,6 +70,7 @@ If the task cannot proceed because planning context is missing, stale, placehold
 6. Review.
    - Check throughput, memory bounds, backpressure, cancellation, idempotency, duplicate handling, restart safety, source traceability, and failure visibility.
    - Check red evidence, green evidence, and refactor-after-green discipline.
+   - Check process DB fingerprint/drift results before assuming all process DBs match the reference schema.
    - Run focused unit and integration tests for every changed stage.
 
 ## Hard Rules
@@ -66,3 +81,4 @@ If the task cannot proceed because planning context is missing, stale, placehold
 - No swallowed parse, normalize, state, merge, buffer, write, or observe errors without traceable diagnostics.
 - No production edits before red evidence and no refactor before green evidence.
 - Do not implement sample or unrelated domain features while running this workflow.
+- Stop with `needs-db-context` when real DB shape is necessary but `.db-context/` is missing, stale, or insufficient.
