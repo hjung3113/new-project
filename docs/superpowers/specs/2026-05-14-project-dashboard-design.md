@@ -24,7 +24,7 @@ The generator will read these repository files when present:
 - `.planning/phases/**` for phase-level context, plan, checkpoints, review, verification, and summary files.
 - `.scratch/phase-state.json` for live phase gate state, approval status, plan pointer, allowed paths, blocked paths, acceptance criteria, verification commands, notes, and next action.
 - `.scratch/**/issues/*.md` for local issue cards.
-- Core docs such as `README.md`, `AGENTS.md`, `docs/phase-gate-harness.md`, and `.planning/codebase/**` as link targets rather than fully rendered content.
+- `docs/**`, `README.md`, and `AGENTS.md` as a document inventory with path, first heading, document category, and link target rather than fully rendered content.
 
 Missing optional files should produce visible warnings in the dashboard rather than failing generation. Invalid JSON in `.scratch/phase-state.json` should fail generation with a clear terminal error because that file is a live gate contract.
 
@@ -50,7 +50,8 @@ The dashboard will use the approved hybrid layout:
 4. Phase detail sections: each phase shows available context, plan, checkpoints, review, verification, summary, and document links.
 5. Verification section: commands and evidence from `.scratch/phase-state.json` and phase verification files.
 6. Issue section: local issue cards discovered under `.scratch/**/issues/*.md`.
-7. Warning section: missing files, inconsistent pointers, stale or unresolved state, and absent active checkpoint files.
+7. Document inventory section: `docs/**`, `README.md`, `AGENTS.md`, and selected `.planning/codebase/**` files grouped by category.
+8. Warning section: missing files, inconsistent pointers, stale or unresolved state, and absent active checkpoint files.
 
 ## Consistency Checks
 
@@ -61,6 +62,7 @@ The generator will surface warnings for conditions such as:
 - Roadmap progress and STATE frontmatter progress disagree.
 - Phase folders are present but not listed in the roadmap.
 - Issue files are present but not referenced by any active phase context.
+- Referenced core documents such as `README.md`, `AGENTS.md`, or `docs/phase-gate-harness.md` are missing.
 
 Warnings should appear both in terminal output and in the generated HTML.
 
