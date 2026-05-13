@@ -17,11 +17,24 @@ The owning mode must reload durable context from `.planning/` and `.scratch/phas
 
 If the task cannot proceed because planning context is missing, stale, placeholder-only, or outside the approved phase gate, return `needs-plan` instead of guessing.
 
+## DB Context Snapshot
+
+When the task depends on actual MSSQL tables, columns, indexes, foreign keys, stored procedures, functions, views, triggers, SQL Agent jobs, MERGE keys, writer behavior, idempotency, or restart-safety, read `.db-context/latest.json` before making conclusions.
+
+Use `.db-context/routines.index.json` to locate stored procedures, functions, and views. Use `.db-context/routines.sql` when exact SQL control flow, transaction boundaries, dynamic SQL, temp tables, cursor use, or MERGE semantics matter. Use `.db-context/jobs.md` when SQL Agent jobs or schedules may affect the change.
+
+Do not connect to the database by default. If `.db-context/` exists, it is the source of truth for analysis. Only run `python scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
+
+If DB context is required but missing, stale, or insufficient, return `needs-db-context` instead of guessing or refreshing automatically.
+
+The expected database model is one master database and many process databases. Process databases are expected to share the same schema shape; check `process_database_comparison` before assuming a process DB schema is representative.
+
 ## Steps
 
 1. State intent.
    - Run `workflow-phase-gate` first. Stop before implementation unless phase state is `execute`, `approved=true`, and tied to the approved `plan_id`.
    - Identify the data model, table, query, migration, or writer behavior being changed.
+   - Read DB context snapshot files when real DB shape or routines matter.
    - Identify volume, concurrency, and reprocess expectations.
    - Stop if the request is only a review; route to `review`.
 
@@ -32,6 +45,7 @@ If the task cannot proceed because planning context is missing, stale, placehold
    - Plan indexes around filters, joins, merge keys, uniqueness, foreign keys, retention, and reprocess paths.
    - Define transaction, idempotency, and rollback expectations before writing code.
    - Define staging and MERGE semantics for bulk writes before implementation.
+   - Cross-check planned table, index, SP, function, and job assumptions against `.db-context/` when available.
 
 3. Test first.
    - Add xUnit coverage for behavior around the change and run it red before production edits.
@@ -50,6 +64,7 @@ If the task cannot proceed because planning context is missing, stale, placehold
 
 5. Review.
    - Check injection risk, locks, deadlocks, idempotency, restart safety, non-sargable predicates, missing indexes, staging correctness, MERGE safety, and rollback/recovery.
+   - Check actual DB snapshot assumptions against the implementation when `.db-context/` is present.
    - Check red evidence, green evidence, and refactor-after-green discipline.
    - Run the focused tests and any impacted migration/query suites.
 
@@ -64,3 +79,4 @@ If the task cannot proceed because planning context is missing, stale, placehold
 - Do not implement sample or domain features that are not required by the database change.
 - Stop and split the work if the request also changes ETL stage logic or broad application behavior that should be owned elsewhere.
 - Stop when a DB behavior change has no real MSSQL container coverage.
+- Stop with `needs-db-context` when real DB shape is necessary but `.db-context/` is missing, stale, or insufficient.
