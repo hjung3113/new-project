@@ -45,6 +45,14 @@ python3 scripts/harness.py upgrade --target /path/to/project
 python3 scripts/harness.py check
 ```
 
+현재 작업 현황을 사람이 빠르게 훑어보려면 정적 HTML 대시보드를 생성합니다.
+
+```bash
+python3 scripts/project_dashboard.py
+```
+
+이 명령은 `.planning/**`, `.scratch/**`, `docs/**`, `README.md`, `AGENTS.md`를 읽고 [.scratch/reports/project-dashboard.html](.scratch/reports/project-dashboard.html)을 만듭니다. 생성된 HTML은 커밋하지 않는 로컬 산출물이며, roadmap은 `Done / In Progress / Remaining` 칸반으로 표시됩니다.
+
 `init`은 깨끗한 project-owned planning skeleton을 타겟에 설치합니다. 기존 파일이 있으면 덮어쓰지 않고 중단합니다.
 
 `upgrade`는 새 하네스 소스에서 타겟을 지정해 실행합니다. manifest에서 `harness-owned` 또는 `managed`로 분류된 파일만 갱신하고, `.planning/STATE.md`, `.planning/phases/**`, `.scratch/phase-state.json`처럼 프로젝트 진행 상태가 담기는 파일은 보존합니다. 하네스 소유 파일을 타겟에서 수정한 경우에는 `.harness/conflicts/**/*.new`에 새 버전을 남기고 충돌을 보고합니다.
