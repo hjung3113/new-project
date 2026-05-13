@@ -46,7 +46,7 @@ The dashboard will use the approved hybrid layout:
 
 1. Header summary: project name, milestone, current status, progress percentage, last update, and generated timestamp.
 2. Left summary rail: active phase, active checkpoint, live gate state, approval status, blockers, and next action.
-3. Main roadmap board: phases grouped visually by status, with completed, active, and upcoming phases distinguishable at a glance.
+3. Main roadmap kanban: phases grouped into Done, In Progress, and Remaining columns so completed and remaining work are visible at a glance.
 4. Phase detail sections: each phase shows available context, plan, checkpoints, review, verification, summary, and document links.
 5. Verification section: commands and evidence from `.scratch/phase-state.json` and phase verification files.
 6. Issue section: local issue cards discovered under `.scratch/**/issues/*.md`.

@@ -431,10 +431,10 @@ def render_html(data: DashboardData) -> str:
       {render_warnings(data.warnings)}
       <section class="panel">
         <div class="section-heading">
-          <h2>Roadmap Board</h2>
-          <p>Completed, active, and upcoming work from .planning/ROADMAP.md</p>
+          <h2>Roadmap Kanban</h2>
+          <p>Done, in-progress, and remaining phases from .planning/ROADMAP.md</p>
         </div>
-        <div class="board">{render_phase_cards(data.roadmap_phases)}</div>
+        {render_phase_kanban(data.roadmap_phases)}
       </section>
 
       <section class="panel">
@@ -525,10 +525,19 @@ dd { margin: 4px 0 0; }
 .panel { padding: 20px; }
 .section-heading { display: flex; justify-content: space-between; gap: 18px; align-items: start; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 16px; }
 .section-heading p { margin: 0; color: var(--muted); font-size: 13px; }
-.board { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.kanban { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.kanban-column { border: 1px solid var(--line); border-radius: 8px; background: #f8fafc; padding: 12px; min-height: 180px; }
+.kanban-column.done { background: #f0fdf4; border-color: #9bd4ae; }
+.kanban-column.active { background: #eff6ff; border-color: #93c5fd; }
+.kanban-column.remaining { background: #f8fafc; }
+.kanban-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.kanban-header h3 { margin: 0; font-size: 16px; }
+.kanban-count { min-width: 28px; text-align: center; border-radius: 999px; padding: 3px 8px; background: white; border: 1px solid var(--line); font-weight: 700; font-size: 12px; }
+.kanban-stack { display: grid; gap: 10px; }
 .phase-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: var(--soft); }
 .phase-card.done { border-color: #9bd4ae; background: #effaf3; }
 .phase-card.active { border-color: #93c5fd; background: #eff6ff; }
+.phase-card.remaining { background: white; }
 .phase-card h3 { font-size: 16px; }
 .phase-card p { color: var(--muted); font-size: 13px; }
 .grid-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -543,7 +552,7 @@ code { background: #edf2f7; border: 1px solid #dbe3ec; padding: 2px 5px; border-
 .issue-card { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: var(--soft); }
 .warning { border: 1px solid #f59e0b; background: #fffbeb; color: #78350f; }
 @media (max-width: 900px) {
-  .hero, .layout, .grid-two { grid-template-columns: 1fr; }
+  .hero, .layout, .grid-two, .kanban { grid-template-columns: 1fr; }
   .rail { position: static; }
 }
 """
@@ -555,20 +564,50 @@ def render_warnings(warnings: list[str]) -> str:
     return f'<section class="panel warning"><h2>Warnings</h2>{render_list(warnings)}</section>'
 
 
-def render_phase_cards(phases: list[RoadmapPhase]) -> str:
+def render_phase_kanban(phases: list[RoadmapPhase]) -> str:
     if not phases:
         return '<p class="muted">No roadmap phases found.</p>'
+    columns = group_phases_for_kanban(phases)
+    return (
+        '<div class="kanban">'
+        f'{render_kanban_column("Done", "done", columns["done"])}'
+        f'{render_kanban_column("In Progress", "active", columns["active"])}'
+        f'{render_kanban_column("Remaining", "remaining", columns["remaining"])}'
+        "</div>"
+    )
+
+
+def group_phases_for_kanban(phases: list[RoadmapPhase]) -> dict[str, list[RoadmapPhase]]:
+    columns: dict[str, list[RoadmapPhase]] = {"done": [], "active": [], "remaining": []}
     first_open_seen = False
-    cards: list[str] = []
     for phase in phases:
-        state = "done" if phase.completed else "active" if not first_open_seen else "upcoming"
-        if not phase.completed:
+        if phase.completed:
+            columns["done"].append(phase)
+        elif not first_open_seen:
+            columns["active"].append(phase)
             first_open_seen = True
-        cards.append(
-            f'<article class="phase-card {state}"><span class="pill">{escape(state)}</span>'
-            f"<h3>{escape(phase.title)}</h3><p>{escape(phase.summary)}</p></article>"
-        )
-    return "".join(cards)
+        else:
+            columns["remaining"].append(phase)
+    return columns
+
+
+def render_kanban_column(title: str, state: str, phases: list[RoadmapPhase]) -> str:
+    cards = "".join(render_phase_card(phase, state) for phase in phases)
+    if not cards:
+        cards = '<p class="muted">No phases.</p>'
+    return (
+        f'<section class="kanban-column {state}">'
+        f'<div class="kanban-header"><h3>{escape(title)}</h3><span class="kanban-count">{len(phases)}</span></div>'
+        f'<div class="kanban-stack">{cards}</div>'
+        "</section>"
+    )
+
+
+def render_phase_card(phase: RoadmapPhase, state: str) -> str:
+    return (
+        f'<article class="phase-card {state}"><span class="pill">{escape(state)}</span>'
+        f"<h3>{escape(phase.title)}</h3><p>{escape(phase.summary)}</p></article>"
+    )
 
 
 def render_phase_documents(documents: list[PhaseDocument]) -> str:
