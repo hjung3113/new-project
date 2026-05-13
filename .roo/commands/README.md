@@ -15,3 +15,12 @@ These commands are the user-facing entry points for the template.
 | `/issues` | `docs-issues` | Convert docs and plans into PRDs, local tracker issues, acceptance criteria, and implementation slices. |
 
 Slash commands stay thin. Use `.roo/rules-orchestrator/rules.md` for exclusive routing and tie breakers; use the workflow skill or owning mode for the actual sequence.
+
+## Automation Flags
+
+Any workflow that uses the phase gate may receive these prompt flags:
+
+- `--auto`: select recommended low-risk defaults, record auditable `auto_selected` entries, and stop for destructive, external, security-sensitive, irreversible, broad-scope, or ambiguous product-direction choices.
+- `--chain`: run one phase's reviewed `discuss -> plan -> execute` path with recommended defaults only when `.scratch/phase-state.json` is verified or written with `phase=execute`, matching `plan_id`, `approved=true`, `automation_mode=chain`, durable pointers, non-empty `allowed_paths`, non-empty `verification`, and no unresolved P1 adversarial review finding.
+
+Flags do not skip phase-local `discuss`, alignment summary, adversarial review, plan approval evidence, or verification.

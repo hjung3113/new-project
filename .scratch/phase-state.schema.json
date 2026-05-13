@@ -7,6 +7,8 @@
   "required": [
     "phase",
     "approved",
+    "automation_mode",
+    "auto_selected",
     "updated_at",
     "updated_by"
   ],
@@ -133,6 +135,73 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "automation_mode": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "auto",
+        "chain"
+      ],
+      "description": "manual waits for explicit user choices; auto accepts recommended non-blocking choices; chain accepts recommended discuss->plan->execute progression until a stop condition appears."
+    },
+    "auto_selected": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "choice",
+          "selected_value",
+          "reason",
+          "evidence_path",
+          "risk_level",
+          "reversible",
+          "inside_allowed_paths",
+          "stop_conditions_checked"
+        ],
+        "properties": {
+          "choice": {
+            "type": "string",
+            "minLength": 1
+          },
+          "selected_value": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "reversible": {
+            "type": "boolean"
+          },
+          "inside_allowed_paths": {
+            "type": "boolean"
+          },
+          "stop_conditions_checked": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "description": "Recommended choices selected automatically under --auto or --chain."
     },
     "updated_at": {
       "type": "string",
@@ -325,6 +394,29 @@
           },
           "next_action": {
             "type": "string"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "automation_mode": {
+            "enum": [
+              "auto",
+              "chain"
+            ]
+          }
+        },
+        "required": [
+          "automation_mode"
+        ]
+      },
+      "then": {
+        "properties": {
+          "auto_selected": {
+            "type": "array",
+            "minItems": 1
           }
         }
       }

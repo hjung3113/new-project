@@ -7,10 +7,10 @@ Use this protocol after any reset, handoff, or new agent session.
 1. Read `AGENTS.md`.
 2. Read `.planning/STATE.md`.
 3. Read `.planning/ROADMAP.md`.
-4. Read the active phase `*-CHECKPOINTS.md`.
-5. Read `.scratch/phase-state.json` if it exists. If it does not exist, default to `discuss`.
-6. Read the active phase `*-CONTEXT.md`.
-7. Read the latest relevant `*-SUMMARY.md` and `*-VERIFICATION.md`.
+4. Read `.planning/codebase/ARCHITECTURE.md`, `STACK.md`, `STRUCTURE.md`, `CONVENTIONS.md`, `TESTING.md`, `INTEGRATIONS.md`, and `CONCERNS.md` when they exist.
+5. Read the active phase `*-CHECKPOINTS.md`.
+6. Read the active phase context, plan, review, verification, and summary files when they exist.
+7. Read `.scratch/phase-state.json` if it exists. If it does not exist, default to `discuss`.
 8. Run `git status --short`.
 9. Do not edit implementation files unless the live phase state permits it.
 

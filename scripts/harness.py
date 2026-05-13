@@ -164,6 +164,8 @@ def check(*, root: Path, target: Path | None = None, base: str | None = None, wo
     check_json(root / ".scratch/phase-state.schema.json")
     check_json(root / ".scratch/phase-state.example.json")
     check_json(root / ".scratch/phase-state.json")
+    check_phase_state_semantics(root / ".scratch/phase-state.json")
+    check_phase_state_semantics(root / ".scratch/phase-state.example.json")
     check_command_modes(root)
     check_phase_state_paths(root)
     check_phase_reference_drift(root)
@@ -276,6 +278,10 @@ def check_installed_target(target: Path) -> None:
         path = target / relative
         if path.exists():
             check_json(path)
+    for relative in (".scratch/phase-state.json", ".scratch/phase-state.example.json"):
+        path = target / relative
+        if path.exists():
+            check_phase_state_semantics(path)
 
 
 def write_json(path: Path, data: object) -> None:
@@ -303,6 +309,43 @@ def check_clean_skeleton(root: Path) -> None:
 
 def check_json(path: Path) -> None:
     json.loads(path.read_text(encoding="utf-8"))
+
+
+def check_phase_state_semantics(path: Path) -> None:
+    state = json.loads(path.read_text(encoding="utf-8"))
+    automation_mode = state.get("automation_mode")
+    if automation_mode not in {"manual", "auto", "chain"}:
+        raise SystemExit(f"{path} automation_mode must be manual, auto, or chain.")
+    auto_selected = state.get("auto_selected")
+    if not isinstance(auto_selected, list):
+        raise SystemExit(f"{path} auto_selected must be an array.")
+    if automation_mode in {"auto", "chain"} and not auto_selected:
+        raise SystemExit(f"{path} auto_selected must record choices when automation_mode={automation_mode}.")
+    required = {
+        "choice": str,
+        "selected_value": str,
+        "reason": str,
+        "evidence_path": str,
+        "risk_level": str,
+        "reversible": bool,
+        "inside_allowed_paths": bool,
+        "stop_conditions_checked": list,
+    }
+    for index, item in enumerate(auto_selected):
+        if not isinstance(item, dict):
+            raise SystemExit(f"{path} auto_selected[{index}] must be an object.")
+        for key, expected_type in required.items():
+            if key not in item or not isinstance(item[key], expected_type):
+                raise SystemExit(f"{path} auto_selected[{index}].{key} is required.")
+        if item["risk_level"] not in {"low", "medium", "high"}:
+            raise SystemExit(f"{path} auto_selected[{index}].risk_level must be low, medium, or high.")
+        if not item["stop_conditions_checked"]:
+            raise SystemExit(f"{path} auto_selected[{index}].stop_conditions_checked must be non-empty.")
+    if automation_mode == "chain" and state.get("phase") == "execute":
+        if state.get("approved") is not True or not state.get("plan_id"):
+            raise SystemExit(f"{path} chain execute requires approved=true and plan_id.")
+        if not state.get("allowed_paths") or not state.get("verification"):
+            raise SystemExit(f"{path} chain execute requires allowed_paths and verification.")
 
 
 def check_command_modes(root: Path) -> None:

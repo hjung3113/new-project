@@ -178,6 +178,26 @@ class HarnessToolTests(unittest.TestCase):
         self.assertFalse(harness.path_allowed("README.md.bak", allowed, blocked))
         self.assertFalse(harness.path_allowed(".db-context/latest.json", allowed, blocked))
 
+    def test_phase_state_semantics_require_auditable_auto_selected_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "phase-state.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "phase": "discuss",
+                        "approved": False,
+                        "automation_mode": "auto",
+                        "auto_selected": ["too vague"],
+                        "updated_at": "2026-05-14T00:00:00Z",
+                        "updated_by": "test",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "auto_selected\\[0\\] must be an object"):
+                harness.check_phase_state_semantics(path)
+
 
 if __name__ == "__main__":
     unittest.main()

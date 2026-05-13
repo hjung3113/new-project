@@ -227,6 +227,11 @@
       "policy": "project-owned"
     },
     {
+      "path": ".planning/HANDOFF-PROTOCOL.md",
+      "source": "harness/skeleton/clean/.planning/HANDOFF-PROTOCOL.md",
+      "policy": "project-owned"
+    },
+    {
       "path": ".planning/VERIFICATION.md",
       "source": "harness/skeleton/clean/.planning/VERIFICATION.md",
       "policy": "project-owned"

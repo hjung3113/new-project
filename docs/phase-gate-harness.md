@@ -23,6 +23,36 @@ The four phases are:
 | `execute` | Implementation and verification for the approved plan only | Move to `done` after verification |
 | `done` | Final summary, rationale, verification, and follow-up candidates | Start a new `discuss` for new work |
 
+Each roadmap phase has its own lifecycle:
+
+```text
+phase-N discuss -> phase-N plan -> phase-N execute -> phase-N done
+```
+
+A new phase must not skip directly to `plan`. Its phase-local `discuss` pass records the phase problem, target user/operator, non-goals, first usable slice, repo-derived answers, user-preference questions, recommended defaults, and verification evidence candidates.
+
+## Automation Flags
+
+Automation flags may be passed in the user's Roo command or prompt. They change how choices are resolved, not what the gate allows.
+
+- `manual`: default. Ask the user for choices that affect scope, phase boundaries, acceptance criteria, or implementation authority.
+- `--auto`: use recommended answers only for documentation wording, ordering, naming, or repo-proven defaults inside current allowed paths. Record auditable automatic choices in `auto_selected` or the active phase context.
+- `--chain`: run one phase's `discuss -> plan -> execute` path using recommended answers when the generated plan has `plan_id`, durable pointers, non-empty `allowed_paths`, non-empty `verification`, no unresolved P1 adversarial findings, and `.scratch/phase-state.json` has been verified or written with `phase=execute`, the same `plan_id`, `approved=true`, and `automation_mode=chain`.
+
+Both `--auto` and `--chain` must stop for destructive, external, secret-bearing, deployment, deletion, irreversible, broad-scope, or ambiguous product-direction choices.
+
+## Adversarial Review
+
+Before final ADR decisions, ROADMAP phases, phase plans, or success criteria are treated as executable, run an adversarial review:
+
+1. Select two expert roles relevant to the work.
+2. Give each expert three review lenses.
+3. Include one mandatory lens: whether the questions are concrete enough for a low-reasoning model to align with the user's intent.
+4. Convert findings into reinforcement points.
+5. Apply each point or record it as deferred/rejected with a reason.
+
+Unreviewed plans remain drafts.
+
 ## Execute Gate
 
 Execution is allowed only when all of these are true:
@@ -66,6 +96,8 @@ Roo skills and rules are not a file-system lock or policy engine. By themselves,
 
 For hard enforcement, add separate tooling: JSON Schema validation, pre-commit checks, CI diff checks against `allowed_paths`, branch protection, or repository permissions.
 
+This harness includes `scripts/harness.py check` for local structure checks, phase-state automation semantics, and optional changed-path enforcement. Continue to run AJV schema validation as part of PR verification.
+
 ## Document-Centered Continuity
 
 Use this restart order after any session reset:
@@ -73,10 +105,10 @@ Use this restart order after any session reset:
 1. `AGENTS.md`
 2. `.planning/STATE.md`
 3. `.planning/ROADMAP.md`
-4. Active phase `*-CHECKPOINTS.md`
-5. `.scratch/phase-state.json`
-6. Active phase `*-CONTEXT.md`
-7. Latest relevant `*-SUMMARY.md` and `*-VERIFICATION.md`
+4. `.planning/codebase/ARCHITECTURE.md`, `STACK.md`, `STRUCTURE.md`, `CONVENTIONS.md`, `TESTING.md`, `INTEGRATIONS.md`, and `CONCERNS.md` when they exist
+5. Active phase `*-CHECKPOINTS.md`
+6. Active phase `*-CONTEXT.md`, `*-PLAN.md`, `*-REVIEW.md`, `*-VERIFICATION.md`, and `*-SUMMARY.md` when they exist
+7. `.scratch/phase-state.json`
 
 For `plan`, `execute`, and `done`, the phase-state schema requires enough pointers to resume from durable docs. If those pointers are missing, treat the state as incomplete and return to `plan`.
 
@@ -89,6 +121,8 @@ phase: <discuss|plan|execute|done>
 plan_id: <id or none>
 approved: <true|false>
 allowed_work: <read-only|docs-plan-only|implementation|summary-only>
+automation_mode: <manual|auto|chain>
+auto_selected: <none|summary>
 next_step: <one concrete next action>
 ```
 

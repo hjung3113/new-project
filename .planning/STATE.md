@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
-status: harness distribution hardening implemented and ready for PR
+status: harness distribution and alignment hardening implemented and ready for PR
 last_updated: "2026-05-14T00:00:00.000Z"
 progress:
   total_phases: 5
@@ -18,7 +18,7 @@ progress:
 
 - **Core value**: A reusable Roo Code harness that keeps low-reasoning models inside explicit workflows for C#/.NET ETL projects.
 - **Current milestone**: Milestone 1 - reusable low-reasoning Roo harness.
-- **Current focus**: Phase 3 harness distribution hardening complete; PR creation and merge remain.
+- **Current focus**: Phase 3 harness distribution hardening plus ADR/init alignment hardening complete; PR creation and merge remain.
 
 ## Current Position
 
@@ -29,9 +29,9 @@ progress:
 
 ## Active Checkpoint
 
-- **Checkpoint**: CP-03-05 - Review and hardening complete.
+- **Checkpoint**: CP-03-06 - ADR/init alignment hardening added.
 - **Checkpoint file**: `.planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md`.
-- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 3 checkpoint file. PR creation is next.
+- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 3 checkpoint file. Run harness verification if not already current, then PR creation is next.
 
 ## Accumulated Context
 
@@ -101,4 +101,4 @@ Files of record:
 
 ## Next Action
 
-Open a PR for `codex/harness-distribution-hardening`, then merge after review.
+After merge, push `main` only if requested; otherwise start the next change from a new phase-local `discuss`.

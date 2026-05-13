@@ -10,6 +10,9 @@ Implemented a manifest-based distribution layer for the Roo harness.
 - Added `scripts/test_harness.py` covering clean init, conflict behavior, target checks, path containment, symlink refusal, and allowed-path semantics.
 - Updated README with init/upgrade/check usage, ownership rules, and PR verification commands.
 - Updated `.roomodes` so `harness-maintainer` owns harness distribution files.
+- Hardened ADR/init planning with phase-local discuss, alignment summaries, two-expert adversarial review, low-reasoning question concreteness checks, and documented `--auto`/`--chain` semantics.
+- Added phase-state automation fields plus local semantic checks for auditable `auto_selected` entries.
+- Added clean skeleton handoff protocol so distributed project-owned planning docs match files of record.
 
 ## Review Hardening
 

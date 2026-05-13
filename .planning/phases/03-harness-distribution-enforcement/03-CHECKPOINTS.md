@@ -29,3 +29,9 @@
 - **Status**: Complete.
 - **Evidence**: `03-REVIEW.md`, `03-VERIFICATION.md`, `03-01-SUMMARY.md`.
 - **Restart**: Address review findings before PR.
+
+## CP-03-06 - ADR/init alignment hardening added
+
+- **Status**: Complete.
+- **Evidence**: `AGENTS.md`, `README.md`, `docs/phase-gate-harness.md`, `.roo/commands/README.md`, `.roo/commands/adr.md`, `.roo/rules/phase-gate.md`, `.roo/skills/workflow-architecture-decision/SKILL.md`, `.roo/skills/workflow-planning-hydration/SKILL.md`, `.roo/skills/workflow-phase-gate/SKILL.md`, `.scratch/phase-state.schema.json`, `scripts/harness.py`, `scripts/test_harness.py`, `harness/manifest.json`, `harness/skeleton/clean/**`.
+- **Restart**: Run harness verification, then open a PR for `codex/harness-distribution-hardening`.

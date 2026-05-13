@@ -4,18 +4,20 @@
   "approved": true,
   "approved_by": "human",
   "approved_at": "2026-05-14T00:00:00Z",
-  "summary": "Add clean skeleton, manifest-based init/upgrade, harness checks, and README onboarding.",
+  "summary": "Add clean skeleton, manifest-based init/upgrade, harness checks, README onboarding, and alignment automation hardening.",
   "plan_path": ".planning/phases/03-harness-distribution-enforcement/03-01-PLAN.md",
   "state_path": ".planning/STATE.md",
   "checkpoint_path": ".planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md",
-  "current_checkpoint": "CP-03-05",
-  "next_action": "Open a PR for codex/harness-distribution-hardening, then merge after review.",
+  "current_checkpoint": "CP-03-06",
+  "next_action": "After merge, push main only if requested; otherwise start the next change from a new phase-local discuss.",
   "allowed_paths": [
     "AGENTS.md",
     "README.md",
     ".roomodes",
+    ".roo/",
     ".planning/",
-    ".scratch/phase-state.json",
+    ".scratch/",
+    "docs/phase-gate-harness.md",
     "harness/",
     "scripts/harness.py",
     "scripts/test_harness.py"
@@ -30,7 +32,9 @@
     "Init installs into a target that is not this git repository and refuses partial overwrites.",
     "Upgrade preserves project-owned state and reports conflicts for locally modified harness files.",
     "Check validates JSON, command/mode consistency, clean skeleton contamination, stale phase references, installed targets, and optional changed-path enforcement.",
-    "README documents init, upgrade, check, file ownership, and PR-before-merge verification."
+    "README documents init, upgrade, check, file ownership, and PR-before-merge verification.",
+    "ADR/init workflows require alignment summaries, phase-local discuss, adversarial review, and low-reasoning question concreteness before phase commitments.",
+    "--auto and --chain semantics are documented with stop conditions and auditable auto_selected entries."
   ],
   "verification": [
     "python3 -m unittest scripts/test_harness.py",
@@ -46,6 +50,8 @@
     "Upgrade is run from a newer harness source tree against a target project.",
     "Installed targets can run local check without a source manifest."
   ],
+  "automation_mode": "manual",
+  "auto_selected": [],
   "updated_at": "2026-05-14T00:00:00.000Z",
   "updated_by": "codex"
 }

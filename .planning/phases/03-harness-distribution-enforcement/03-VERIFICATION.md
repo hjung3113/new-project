@@ -16,12 +16,19 @@ tmp="$(mktemp -d)"; python3 scripts/harness.py init --target "$tmp/target"; pyth
 
 ## Results
 
-- `python3 -m unittest scripts/test_harness.py`: passed, 12 tests.
+- `python3 -m unittest scripts/test_harness.py`: passed, 13 tests.
 - `python3 -m unittest scripts/test_db_context_snapshot.py`: passed, 9 tests.
 - `python3 -m py_compile scripts/harness.py scripts/test_harness.py`: passed.
 - `python3 scripts/harness.py check`: passed.
-- `python3 scripts/harness.py check --worktree`: passed.
+- `python3 scripts/harness.py check --worktree`: passed after CP-03-06 live phase-state authorization was updated.
 - `jq . .roomodes >/dev/null`: passed.
 - `phase-state.json` AJV validation: passed.
 - `phase-state.example.json` AJV validation: passed.
 - Installed-target lifecycle smoke test: passed.
+
+## CP-03-06 Adversarial Review Evidence
+
+Two adversarial expert reviews were run after adding alignment automation hardening.
+
+- Low-reasoning workflow review found and resolved: `--chain` approval ambiguity, unauditable `auto_selected`, abstract phase-local questions, vague `--auto` stop conditions, and an optional mandatory low-reasoning lens.
+- Roo/harness distribution review found and resolved: stale live phase-state authorization, stale worktree verification evidence, advisory-only automation semantics, restart-order drift, and missing clean skeleton handoff protocol.

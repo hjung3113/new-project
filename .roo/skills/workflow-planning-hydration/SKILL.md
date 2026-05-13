@@ -101,7 +101,39 @@ Create a concise inventory:
 
 Do not invent missing commands. Mark them as unknown when the repo does not prove them.
 
-### 2. Detect planning state
+### 2. Align with the user before creating phases
+
+Before creating or reshaping `.planning/ROADMAP.md`, `.planning/STATE.md`, or `.planning/phases/**`, run a `grill-me` style alignment pass:
+
+- Ask one question at a time and include your recommended answer with the reason.
+- If the repository can answer the question, inspect the repository instead of asking.
+- Cover at least: project purpose, target user, current pain, desired outcome, non-goals, hard constraints, acceptable tradeoffs, phase granularity, first useful phase, success criteria, verification evidence, and explicitly unwanted work.
+- Record an alignment summary in the active phase context or `.planning/PROJECT.md`: confirmed facts, repository-derived facts, user-stated preferences, recommended defaults, open questions, and decisions blocked by those questions.
+- Do not convert guesses into phases. If the user has not confirmed a preference and the repository does not prove it, keep it as an open question or recommended default.
+- Use the concrete phase-local question template from `workflow-phase-gate`. Each template question must have `repo_answer`, `user_answer`, or `open_blocker` before this workflow may create or reshape phase plans.
+
+Stop with `needs-info` when the next phase boundary or first useful slice depends on an unresolved user preference.
+
+### 3. Run adversarial review before phase commitments
+
+Before writing final ROADMAP phases, active phase plans, or phase success criteria:
+
+- Select two adversarial expert roles relevant to the project. If the domain is unclear, use:
+  - Product/user expert with lenses: question concreteness for low-reasoning models, user value, non-goals/scope creep.
+  - Architecture/operations expert with lenses: first usable slice, boundary correctness, verification/failure risk.
+- Expert 1 lens 1 must be: are the alignment questions concrete enough for a low-reasoning model to ask the right questions and choose recommended defaults safely?
+- Record each finding as `critique`, `reinforcement point`, and `change made`.
+- Apply each reinforcement point before marking planning context usable, or record it as `deferred`/`rejected` with a reason.
+
+Do not mark planning context usable while P1 adversarial findings remain unresolved.
+
+### 4. Apply automation flags
+
+- `--auto`: choose recommended defaults only for documentation wording, ordering, naming, or repo-proven defaults inside allowed paths; record auditable `auto_selected` entries.
+- `--chain`: continue from phase-local `discuss` to `plan` and then `execute` only when the generated plan has a concrete first slice, non-empty verification, non-empty allowed paths, current durable planning pointers, no unresolved P1 adversarial finding, and `.scratch/phase-state.json` has been verified or written with `phase=execute`, matching `plan_id`, `approved=true`, and `automation_mode=chain`.
+- Stop for user input on destructive, external, secret-bearing, deployment, deletion, irreversible, broad-scope, or ambiguous product-direction choices.
+
+### 5. Detect planning state
 
 Classify existing planning memory as one of:
 
@@ -111,7 +143,7 @@ Classify existing planning memory as one of:
 - `partial`: some files are valid but required sections are missing
 - `usable`: files describe the current project and can be updated incrementally
 
-### 3. Hydrate codebase notes
+### 6. Hydrate codebase notes
 
 Populate `.planning/codebase/**` from observed repository facts.
 
@@ -125,9 +157,11 @@ Minimum expectations:
 - `INTEGRATIONS.md`: databases, APIs, queues, files, auth, CI/CD
 - `CONCERNS.md`: risks, unknowns, migration hazards, operational concerns
 
-### 4. Hydrate phase docs
+### 7. Hydrate phase docs
 
 Ensure there is exactly one active phase folder for the current work.
+
+Every active phase folder begins with phase-local `discuss`, then proceeds to `plan`, `execute`, and `done`. Do not create only a plan file for a new phase without recording the phase-local discussion context.
 
 Required pattern:
 
@@ -149,7 +183,7 @@ For adoption work, prefer a phase name like:
 
 Do not overwrite valuable historical phase evidence. Move stale content to an archive candidate list unless the user explicitly requests deletion.
 
-### 5. Reconcile stale artifacts
+### 8. Reconcile stale artifacts
 
 Create a reconciliation section in the active phase review or context with three buckets:
 
@@ -160,7 +194,7 @@ Create a reconciliation section in the active phase review or context with three
 
 Never silently delete ambiguous planning files.
 
-### 6. Sync state and roadmap
+### 9. Sync state and roadmap
 
 Update:
 
@@ -170,7 +204,7 @@ Update:
 - `.planning/VERIFICATION.md`: known commands and evidence gaps
 - `.scratch/phase-state.json`: only when explicitly in scope
 
-### 7. Stop before implementation
+### 10. Stop before implementation
 
 This workflow is planning-only. It can prepare implementation plans, but it must not modify application behavior.
 
@@ -197,6 +231,7 @@ Record failed checks in the active phase review with owner and next action.
 When reporting completion, include:
 
 ```text
+status: <done|needs-info>
 phase: plan
 planning_context: <absent|template-only|stale|partial|usable> -> <usable|needs-human>
 active_phase: <path>
@@ -223,3 +258,6 @@ next_step: <one concrete action>
 - Do not overwrite or delete historical planning artifacts without classification.
 - Do not mark planning context usable while codebase notes or active phase docs are placeholder-only.
 - Do not invent repository facts that were not observed.
+- Do not create or reshape phase boundaries from unconfirmed model assumptions.
+- Do not mark planning context usable while adversarial review has unresolved P1 findings.
+- Do not let `--auto` or `--chain` bypass phase-local discuss, adversarial review, durable planning pointers, allowed paths, or verification.
