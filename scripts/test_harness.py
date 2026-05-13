@@ -34,6 +34,9 @@ class HarnessToolTests(unittest.TestCase):
             self.assertFalse(phase_state["approved"])
             self.assertEqual(harness.HARNESS_VERSION, installed["version"])
             self.assertTrue((target / ".roo/skills/workflow-phase-gate/SKILL.md").exists())
+            self.assertTrue((target / "scripts/project_dashboard.py").exists())
+            self.assertTrue((target / "scripts/test_project_dashboard.py").exists())
+            self.assertIn("project_dashboard.py", (target / "README.md").read_text(encoding="utf-8"))
 
     def test_init_refuses_to_overwrite_existing_project_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

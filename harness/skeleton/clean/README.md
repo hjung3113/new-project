@@ -15,6 +15,14 @@ This repository has been initialized with the reusable Roo harness.
 python3 scripts/harness.py check
 ```
 
+To generate a local HTML status dashboard:
+
+```bash
+python3 scripts/project_dashboard.py
+```
+
+The dashboard reads `.planning/**`, `.scratch/**`, `docs/**`, `README.md`, and `AGENTS.md`, then writes `.scratch/reports/project-dashboard.html`. The generated report is local output; regenerate it whenever planning documents change.
+
 The harness-owned files define Roo modes, rules, commands, and reusable workflows. Project-owned planning files describe this repository and should be hydrated from the actual project before implementation work starts.
 
 Before ROADMAP phases, phase folders, ADR decisions, or phase success criteria are created, align with the user first. Ask one question at a time, include the recommended answer and reason, inspect the repository instead of asking when the repository can answer, and record an alignment summary with confirmed facts, inferred facts, user preferences, recommended defaults, open questions, and blocked decisions.

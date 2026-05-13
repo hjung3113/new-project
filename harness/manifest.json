@@ -1,5 +1,5 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "files": [
     {
       "path": "AGENTS.md",
@@ -319,6 +319,16 @@
     {
       "path": "scripts/test_db_context_snapshot.py",
       "source": "scripts/test_db_context_snapshot.py",
+      "policy": "harness-owned"
+    },
+    {
+      "path": "scripts/project_dashboard.py",
+      "source": "scripts/project_dashboard.py",
+      "policy": "harness-owned"
+    },
+    {
+      "path": "scripts/test_project_dashboard.py",
+      "source": "scripts/test_project_dashboard.py",
       "policy": "harness-owned"
     }
   ]
