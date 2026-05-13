@@ -270,6 +270,38 @@ MSSQL schema, migration, query, index, transaction, bulk write를 다룹니다. 
 
 read-only 리뷰 workflow입니다. findings를 심각도순으로 제시하고, 파일/라인 근거를 붙입니다. 수정이 필요하면 직접 고치지 않고 올바른 owner workflow로 넘깁니다.
 
+## DB context snapshot
+
+DB, ETL, review, ops workflow가 실제 MSSQL schema, index, stored procedure, function, view, trigger, SQL Agent job에 의존하는 판단을 해야 할 때는 먼저 `.db-context/` snapshot을 봅니다.
+
+기본 동작은 cache-first입니다. snapshot이 있으면 agent는 DB에 접속하지 않고 `.db-context/latest.json`을 읽습니다. 필요한 snapshot이 없거나 오래되었거나 부족하면 추측하지 않고 `needs-db-context`를 반환합니다.
+
+명시적으로 DB context refresh가 필요할 때만 아래 명령을 실행합니다.
+
+```bash
+python3 scripts/db_context_snapshot.py --refresh
+```
+
+SQL Agent job schedule이나 job step까지 필요하면 `--include-agent-jobs`를 함께 사용합니다.
+
+```bash
+python3 scripts/db_context_snapshot.py --refresh --include-agent-jobs
+```
+
+연결 문자열은 commit하지 않습니다. 환경 변수나 CLI 인자로만 전달합니다.
+
+```bash
+export DB_CONTEXT_MASTER_CONNECTION="Driver={ODBC Driver 18 for SQL Server};Server=...;Database=MasterDb;..."
+export DB_CONTEXT_PROCESS_CONNECTIONS='{
+  "process-a": "Driver={ODBC Driver 18 for SQL Server};Server=...;Database=ProcessA;...",
+  "process-b": "Driver={ODBC Driver 18 for SQL Server};Server=...;Database=ProcessB;..."
+}'
+```
+
+snapshot 파일은 민감할 수 있으므로 `.db-context/`와 생성된 SQL/job artifact는 gitignore 대상입니다. Stored procedure 본문이나 job command에는 secret, server name, file path, 업무상 민감한 object name이 들어갈 수 있습니다.
+
+자세한 설계와 threat model은 [docs/db-context-snapshot.md](docs/db-context-snapshot.md)를 봅니다.
+
 ## Mode 소유권
 
 | Mode | 수정 가능 | 수정 금지 |
@@ -359,7 +391,7 @@ npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json 
 README와 실제 Roo 설정이 어긋나는지 확인하려면 command, mode, skill 이름을 함께 검색합니다.
 
 ```bash
-rg -n "workflow-planning-hydration|workflow-simple-task|workflow-feature-tdd|workflow-etl-pipeline|workflow-db-change|workflow-phase-gate" README.md .roo
+rg -n "workflow-planning-hydration|workflow-simple-task|workflow-feature-tdd|workflow-etl-pipeline|workflow-db-change|workflow-phase-gate|db-context-snapshot|needs-db-context" README.md .roo docs
 ```
 
 현재 상태와 다음 작업은 항상 [.planning/STATE.md](.planning/STATE.md)에서 시작합니다.
