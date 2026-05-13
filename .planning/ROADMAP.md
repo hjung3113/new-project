@@ -6,8 +6,8 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 
 - [x] **Phase 1: Document-Centered Phase Continuity** - Add `.planning/` project memory, phase/checkpoint structure, and gate alignment so fresh sessions can continue without transcript state.
 - [x] **Phase 2: DB Context Snapshot** - Add cache-first MSSQL metadata snapshot tooling and teach Roo workflows to use real DB shape without repeated database connections.
-- [ ] **Phase 3: Mechanical Gate Enforcement** - Add pre-commit or CI checks that validate `.scratch/phase-state.json` and changed paths against the approved plan.
-- [ ] **Phase 4: Template Consumer Onboarding** - Add concise bootstrap instructions for cloning this harness into a target C# ETL project.
+- [x] **Phase 3: Mechanical Gate Enforcement** - Add local checks that validate phase state, changed paths, clean skeleton contamination, and harness distribution state.
+- [ ] **Phase 4: Template Consumer Onboarding** - Add deeper bootstrap instructions and managed-block merge behavior for target projects.
 - [ ] **Phase 5: Example ETL Slice** - Add a minimal sample phase plan for a real parser or writer change, proving the harness works end to end.
 
 ## Phase Details
@@ -45,17 +45,18 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 
 ### Phase 3: Mechanical Gate Enforcement
 
-**Goal**: Convert prompt-level phase discipline into repository checks.
+**Goal**: Convert prompt-level phase discipline into repository checks and a clean distribution path.
 
 **Depends on**: Phase 1.
 
 **Success Criteria**:
 
-1. A local validation command verifies `.scratch/phase-state.json` against `.scratch/phase-state.schema.json`.
+1. A local validation command verifies harness structure and phase-state JSON syntax.
 2. A changed-path check fails when implementation edits fall outside `allowed_paths`.
-3. The enforcement workflow is documented with bypass policy and limitations.
+3. The enforcement workflow is documented with ownership, init, upgrade, and PR verification guidance.
+4. Clean skeleton initialization separates harness-owned files from target project state.
 
-**Plans**: TBD.
+**Plans**: 1 plan.
 
 ### Phase 4: Template Consumer Onboarding
 
@@ -91,7 +92,7 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 | --- | ---: | --- | --- |
 | 1. Document-Centered Phase Continuity | 1/1 | Implemented | 2026-05-11 |
 | 2. DB Context Snapshot | 1/1 | Implemented | 2026-05-13 |
-| 3. Mechanical Gate Enforcement | 0/? | Not started | - |
+| 3. Mechanical Gate Enforcement | 1/1 | Implemented | 2026-05-14 |
 | 4. Template Consumer Onboarding | 0/? | Not started | - |
 | 5. Example ETL Slice | 0/? | Not started | - |
 

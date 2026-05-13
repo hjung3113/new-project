@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
-status: DB context snapshot workflow implemented and under PR review
-last_updated: "2026-05-13T15:25:00.000Z"
+status: harness distribution hardening implemented and ready for PR
+last_updated: "2026-05-14T00:00:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 40
+  completed_phases: 3
+  total_plans: 3
+  completed_plans: 3
+  percent: 60
 ---
 
 # STATE - Roo C# ETL Orchestration Template
@@ -18,20 +18,20 @@ progress:
 
 - **Core value**: A reusable Roo Code harness that keeps low-reasoning models inside explicit workflows for C#/.NET ETL projects.
 - **Current milestone**: Milestone 1 - reusable low-reasoning Roo harness.
-- **Current focus**: DB context snapshot PR review fixes; next roadmap action remains mechanical gate enforcement.
+- **Current focus**: Phase 3 harness distribution hardening complete; PR creation and merge remain.
 
 ## Current Position
 
-- **Phase**: 2 - DB Context Snapshot **IMPLEMENTED**.
-- **Plan**: 02-01 complete - cache-first MSSQL metadata snapshot tooling, tests, docs, and Roo workflow integration.
-- **Status**: DB context snapshots default to offline cache reads. Explicit refresh can collect fixed catalog metadata, reuse cached database detail when `modify_date` markers, target identity, and collection options are unchanged, and return `needs-db-context` when context is missing or insufficient.
-- **Progress**: Phase 2: 1/1 plan complete; 2/5 phases overall.
+- **Phase**: 3 - Harness Distribution and Enforcement **IMPLEMENTED**.
+- **Plan**: 03-01 complete - clean skeleton and harness tooling.
+- **Status**: Manifest, clean skeleton, init/upgrade/check tooling, README updates, adversarial review hardening, and verification evidence are complete.
+- **Progress**: Phase 3: 1/1 plan complete; 3/5 phases complete overall.
 
 ## Active Checkpoint
 
-- **Checkpoint**: CP-02-05 - Verification captured.
-- **Checkpoint file**: `.planning/phases/02-db-context-snapshot/02-CHECKPOINTS.md`.
-- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active phase checkpoint file. After PR review fixes are merged, return to ROO-8 and mechanical gate enforcement planning.
+- **Checkpoint**: CP-03-05 - Review and hardening complete.
+- **Checkpoint file**: `.planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md`.
+- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 3 checkpoint file. PR creation is next.
 
 ## Accumulated Context
 
@@ -45,16 +45,17 @@ progress:
 - README is the Korean human entry guide for skills, workflows, modes, phase gate, zero-to-done operating flow, and verification commands.
 - DB-dependent Roo workflows should read `.db-context/` first and return `needs-db-context` when required context is missing, stale, or insufficient.
 - DB context refresh may reuse cached per-database detail when table/routine/trigger `modify_date` markers, server/database identity, and redaction/truncation options are unchanged.
+- Harness-owned files are distributed through `harness/manifest.json`.
+- Project-owned planning state is initialized from `harness/skeleton/clean/**` and is not overwritten by `upgrade`.
 
 ### Outstanding open questions
 
-- Whether `allowed_paths` should support globs, path prefixes, or exact paths only in the first mechanical checker.
-- Whether template adoption docs should live in README or a dedicated docs file.
+- Whether managed-block merging for `AGENTS.md` and `README.md` should replace current file-level conflict behavior.
 
 ### Deferred queue
 
-- Mechanical phase gate enforcement.
-- Template consumer onboarding.
+- CI/pre-commit wrapper around `scripts/harness.py check --base <ref>`.
+- Managed-block merge support.
 - Example ETL slice.
 
 ### Blockers
@@ -91,7 +92,13 @@ Files of record:
 - `.planning/phases/02-db-context-snapshot/02-CHECKPOINTS.md`
 - `.planning/phases/02-db-context-snapshot/02-VERIFICATION.md`
 - `.planning/phases/02-db-context-snapshot/02-01-SUMMARY.md`
+- `.planning/phases/03-harness-distribution-enforcement/03-CONTEXT.md`
+- `.planning/phases/03-harness-distribution-enforcement/03-01-PLAN.md`
+- `.planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md`
+- `.planning/phases/03-harness-distribution-enforcement/03-REVIEW.md`
+- `.planning/phases/03-harness-distribution-enforcement/03-VERIFICATION.md`
+- `.planning/phases/03-harness-distribution-enforcement/03-01-SUMMARY.md`
 
 ## Next Action
 
-After PR #12 merges, return to the original hardening roadmap: resolve ROO-8 allowed_paths semantics, then create `.planning/phases/03-mechanical-gate-enforcement/03-CONTEXT.md` and `03-01-PLAN.md` for dual-channel pre-commit + CI enforcement.
+Open a PR for `codex/harness-distribution-hardening`, then merge after review.

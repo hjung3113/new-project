@@ -93,11 +93,11 @@
     {
       "slug": "harness-maintainer",
       "name": "Harness Maintainer",
-      "description": "Maintains Roo modes, slash commands, workflow rules, and agent-control files.",
-      "whenToUse": "Use for changes to Roo orchestration, .roomodes, .roo/**, AGENTS.md, CLAUDE.md, and agent harness documentation.",
+      "description": "Maintains Roo modes, slash commands, workflow rules, distribution scripts, and agent-control files.",
+      "whenToUse": "Use for changes to Roo orchestration, .roomodes, .roo/**, harness/**, scripts/harness.py, scripts/test_harness.py, AGENTS.md, CLAUDE.md, and agent harness documentation.",
       "roleDefinition": "You are the maintainer for the agent harness. You keep mode permissions minimal, routing explicit, slash commands thin, and validation evidence clear.",
-      "customInstructions": "Edit only agent-control and harness files needed for the request. Keep command files as thin entry points; put sequencing in workflow skills or rules. Validate .roomodes JSON with jq after changes. Do not implement application code.",
-      "groups": ["read", ["edit", { "fileRegex": "^(?:\\.roomodes$|\\.roo/.*|\\.scratch/phase-state(?:\\..*)?\\.json$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md)$", "description": "Harness, phase approval state, and agent-control files only" }], "browser", "command", "mcp"],
+      "customInstructions": "Edit only agent-control, distribution, and harness files needed for the request. Keep command files as thin entry points; put sequencing in workflow skills, rules, or harness scripts. Validate .roomodes JSON and run harness checks after changes. Do not implement application code.",
+      "groups": ["read", ["edit", { "fileRegex": "^(?:\\.roomodes$|\\.roo/.*|harness/.*|scripts/(?:harness|test_harness)\\.py$|docs/(?:phase-gate-harness|roo-orchestration-design|db-context-snapshot)\\.md$|README\\.md$|\\.scratch/phase-state(?:\\..*)?\\.json$|(?:^|.*/)(?:AGENTS|CLAUDE)\\.md)$", "description": "Harness, distribution, phase approval state, and agent-control files only" }], "browser", "command", "mcp"],
       "source": "project"
     }
   ]

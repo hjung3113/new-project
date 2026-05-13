@@ -8,7 +8,8 @@ Status values: `Proposed`, `Accepted`, `Locked`, `Superseded`.
 | DEC-0002 | Accepted | `.scratch/phase-state.json` is a gate, not the plan. | `.planning/PROJECT.md`, `docs/phase-gate-harness.md` | Phase gate |
 | DEC-0003 | Accepted | Every phase closes with summary and verification evidence. | `.planning/PROJECT.md`, `.planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md` | All phases |
 | DEC-0004 | Accepted | New sessions start at `.planning/STATE.md`, then read live phase state. | `.planning/HANDOFF-PROTOCOL.md`, `AGENTS.md` | Continuity |
-| DEC-0005 | Proposed | Phase 2 should add mechanical checks for phase-state validity and allowed-path drift. | `.planning/ROADMAP.md` | Enforcement |
+| DEC-0005 | Accepted | Phase 3 adds mechanical checks for phase-state validity, allowed-path drift, harness ownership, and clean-skeleton contamination. | `.planning/ROADMAP.md`, `scripts/harness.py` | Enforcement |
+| DEC-0006 | Accepted | Target projects consume the harness through a clean skeleton plus manifest-based init/upgrade; live project planning state is project-owned and not overwritten by upgrade. | `harness/manifest.json`, `harness/skeleton/clean/` | Distribution |
 
 ## Promotion Rule
 

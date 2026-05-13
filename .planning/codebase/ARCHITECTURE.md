@@ -26,6 +26,8 @@ User request
 | `.scratch/phase-state*.json` | Live gate state and examples | Harness maintainer |
 | `.roo/` | Roo rules, commands, workflow skills | Harness maintainer |
 | `.roomodes` | Roo mode definitions and write scopes | Harness maintainer |
+| `harness/` | Distribution manifest and clean skeleton templates | Harness maintainer |
+| `scripts/harness.py` | Init, upgrade, check, and changed-path enforcement tooling | Harness maintainer |
 | `docs/agents/` | Local issue tracker, triage, and domain-doc conventions | Planning skills |
 | Target app source | Application implementation in projects that adopt the harness | Implementation modes only after execute approval |
 

@@ -8,18 +8,18 @@
 
 - **Risk**: Roo rules can instruct agents, but cannot stop filesystem writes or commits.
 - **Current mitigation**: `.scratch/phase-state.json` records explicit phase, plan, allowed paths, verification, checkpoint, and next action.
-- **Follow-up**: Phase 2 should add validation and changed-path checks.
+- **Follow-up**: Phase 3 adds validation, changed-path checks, and clean-skeleton contamination checks.
 
 ### Template adoption still needs a bootstrap path
 
 - **Risk**: A target team may copy the harness but leave template-specific wording or stale phase docs in place.
-- **Current mitigation**: `.planning/ROADMAP.md` includes Phase 3 for consumer onboarding.
-- **Follow-up**: Add a concise adoption checklist that distinguishes template internals from target-project memory.
+- **Current mitigation**: `.planning/ROADMAP.md` includes Phase 4 for consumer onboarding, and Phase 3 adds the initial manifest-based installer.
+- **Follow-up**: Keep the README adoption checklist aligned with `scripts/harness.py init`, `upgrade`, and `check`.
 
 ### Example implementation is intentionally absent
 
 - **Risk**: Without a sample phase, adopters may not see how red evidence, allowed paths, and checkpoint updates fit together.
-- **Current mitigation**: Phase 4 is reserved for an example ETL slice.
+- **Current mitigation**: Phase 5 is reserved for an example ETL slice.
 - **Follow-up**: Add the example only after mechanical enforcement scope is decided, or explicitly document why prompt-only enforcement is acceptable.
 
 ### Stale handoff references can drift

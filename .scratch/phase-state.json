@@ -1,56 +1,51 @@
 {
   "phase": "done",
-  "plan_id": "db-context-snapshot-02-01",
+  "plan_id": "harness-distribution-03-01",
   "approved": true,
   "approved_by": "human",
-  "approved_at": "2026-05-13T15:25:00Z",
-  "summary": "Add cache-first MSSQL DB context snapshot tooling and Roo workflow integration.",
-  "plan_path": ".planning/phases/02-db-context-snapshot/02-01-PLAN.md",
+  "approved_at": "2026-05-14T00:00:00Z",
+  "summary": "Add clean skeleton, manifest-based init/upgrade, harness checks, and README onboarding.",
+  "plan_path": ".planning/phases/03-harness-distribution-enforcement/03-01-PLAN.md",
   "state_path": ".planning/STATE.md",
-  "checkpoint_path": ".planning/phases/02-db-context-snapshot/02-CHECKPOINTS.md",
-  "current_checkpoint": "CP-02-05",
-  "next_action": "After PR #12 merges, return to ROO-8 allowed_paths semantics and mechanical gate enforcement planning.",
+  "checkpoint_path": ".planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md",
+  "current_checkpoint": "CP-03-05",
+  "next_action": "Open a PR for codex/harness-distribution-hardening, then merge after review.",
   "allowed_paths": [
-    ".gitignore",
+    "AGENTS.md",
+    "README.md",
+    ".roomodes",
     ".planning/",
     ".scratch/phase-state.json",
-    ".roo/skills/workflow-code-review/SKILL.md",
-    ".roo/skills/workflow-db-change/SKILL.md",
-    ".roo/skills/workflow-etl-pipeline/SKILL.md",
-    ".roo/skills/workflow-ops-observability/SKILL.md",
-    ".roo/rules-orchestrator/rules.md",
-    "docs/db-context-snapshot.md",
-    "scripts/db_context_snapshot.py",
-    "scripts/test_db_context_snapshot.py"
+    "harness/",
+    "scripts/harness.py",
+    "scripts/test_harness.py"
   ],
   "blocked_paths": [
     "src/",
     "tests/"
   ],
   "acceptance_criteria": [
-    "The snapshot tool defaults to offline cache reads and rejects contradictory --refresh --offline usage.",
-    "Refresh uses fixed MSSQL catalog queries and does not execute arbitrary SQL or stored procedures.",
-    "Default process DB comparison uses shape fingerprints to avoid false drift from full-only reference details.",
-    "Refresh reuses cached database detail when table, routine, view, function, trigger modify_date markers, target identity, and collection options are unchanged.",
-    "Generated DB context artifacts are ignored by git by default.",
-    "Roo workflow skills read .db-context/ first and return needs-db-context when required context is missing or insufficient.",
-    "The orchestrator handoff contract recognizes needs-db-context.",
-    "Focused Python tests cover no-connect safety, cache reuse, cache non-reuse safety, stale job artifact replacement, redaction, drift comparison, and ignore defaults."
+    "A manifest classifies harness-owned, project-owned, managed, and excluded files.",
+    "A clean skeleton initializes project-owned planning files without live harness development history.",
+    "Init installs into a target that is not this git repository and refuses partial overwrites.",
+    "Upgrade preserves project-owned state and reports conflicts for locally modified harness files.",
+    "Check validates JSON, command/mode consistency, clean skeleton contamination, stale phase references, installed targets, and optional changed-path enforcement.",
+    "README documents init, upgrade, check, file ownership, and PR-before-merge verification."
   ],
   "verification": [
+    "python3 -m unittest scripts/test_harness.py",
     "python3 -m unittest scripts/test_db_context_snapshot.py",
-    "python3 -m py_compile scripts/db_context_snapshot.py scripts/test_db_context_snapshot.py",
-    "python3 scripts/db_context_snapshot.py --help",
-    "python3 scripts/db_context_snapshot.py --format json (expected failure without .db-context/latest.json)",
+    "python3 -m py_compile scripts/harness.py scripts/test_harness.py",
+    "python3 scripts/harness.py check",
     "jq . .roomodes >/dev/null",
     "npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.json",
-    "! rg -n \"python scripts/db_context_snapshot.py\" docs .roo README.md",
-    "rg -n \"status: <done\\\\|blocked\\\\|needs-plan\\\\|needs-db-context\\\\|needs-review\\\\|failed>\" .roo .planning"
+    "npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.example.json",
+    "tmp=\"$(mktemp -d)\"; python3 scripts/harness.py init --target \"$tmp/target\"; python3 scripts/harness.py check --target \"$tmp/target\"; (cd \"$tmp/target\" && python3 scripts/harness.py check)"
   ],
   "notes": [
-    "Live MSSQL refresh was not run because DB credentials and explicit refresh approval were not provided.",
-    "Mechanical path enforcement remains the next roadmap hardening task."
+    "Upgrade is run from a newer harness source tree against a target project.",
+    "Installed targets can run local check without a source manifest."
   ],
-  "updated_at": "2026-05-13T15:25:00.000Z",
+  "updated_at": "2026-05-14T00:00:00.000Z",
   "updated_by": "codex"
 }

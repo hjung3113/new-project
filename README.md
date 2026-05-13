@@ -6,13 +6,6 @@
 
 ## 핵심 원칙
 
-## 오케스트레이터/서브태스크 실행 모델
-
-메인 orchestrator 세션은 의도적으로 작게 유지합니다. 요청을 분류하고, workflow를 고르고, owning mode에 집중된 subtask를 만들고, 구조화된 결과를 수집한 뒤 최종 상태를 보고합니다.
-
-즉 planning, review, implementation, debugging, verification 같은 실제 작업은 specialist mode가 수행하고, orchestrator는 non-trivial step을 inline으로 실행하지 않습니다.
-
-
 - 모든 요청은 하나의 소유 workflow로 라우팅합니다.
 - 질문, 작은 문서 수정, 오타, 무해한 명령 실행, 기계적 정리, 즉시 검증 가능한 작은 변경은 `/simple`로 처리할 수 있습니다.
 - 구현은 반드시 `discuss -> plan -> execute -> done` phase gate를 통과합니다.
@@ -21,6 +14,12 @@
 - `.planning/`은 영속적인 프로젝트 기억입니다. `.scratch/phase-state.json`은 현재 phase에서 허용된 작업을 나타내는 live gate일 뿐입니다.
 - planning 문서, Roo 설정, tracker, application code의 소유권을 mode별로 분리합니다.
 - [AGENTS.md](AGENTS.md)에는 [andrej-karpathy-skills의 CLAUDE.md](https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md)를 참고한 coding conduct 규칙을 추가했습니다.
+
+## 오케스트레이터/서브태스크 실행 모델
+
+메인 orchestrator 세션은 의도적으로 작게 유지합니다. 요청을 분류하고, workflow를 고르고, owning mode에 집중된 subtask를 만들고, 구조화된 결과를 수집한 뒤 최종 상태를 보고합니다.
+
+즉 planning, review, implementation, debugging, verification 같은 실제 작업은 specialist mode가 수행하고, orchestrator는 non-trivial step을 inline으로 실행하지 않습니다.
 
 ## 새 세션 시작 순서
 
@@ -35,6 +34,33 @@
 7. [.scratch/phase-state.json](.scratch/phase-state.json)
 
 이 순서를 지키면 이전 대화 기록 없이도 현재 phase, checkpoint, blocker, next action, 승인된 plan, 허용 경로를 복구할 수 있습니다.
+
+## 하네스 배포와 업데이트
+
+이 저장소는 하네스 개발 repo이고, 타겟 프로젝트는 이 repo의 `.git` 이력을 포함하지 않아도 됩니다. 배포는 `harness/manifest.json`과 `harness/skeleton/clean/`을 기준으로 합니다.
+
+```bash
+python3 scripts/harness.py init --target /path/to/project
+python3 scripts/harness.py upgrade --target /path/to/project
+python3 scripts/harness.py check
+```
+
+`init`은 깨끗한 project-owned planning skeleton을 타겟에 설치합니다. 기존 파일이 있으면 덮어쓰지 않고 중단합니다.
+
+`upgrade`는 새 하네스 소스에서 타겟을 지정해 실행합니다. manifest에서 `harness-owned` 또는 `managed`로 분류된 파일만 갱신하고, `.planning/STATE.md`, `.planning/phases/**`, `.scratch/phase-state.json`처럼 프로젝트 진행 상태가 담기는 파일은 보존합니다. 하네스 소유 파일을 타겟에서 수정한 경우에는 `.harness/conflicts/**/*.new`에 새 버전을 남기고 충돌을 보고합니다.
+
+`check`는 JSON 구문, Roo command/mode 일치, clean skeleton 오염, stale phase 번호, 선택적 changed-path enforcement를 검증합니다. changed-path 검증은 `phase=execute` 또는 `phase=done`, `approved=true`, `allowed_paths`가 있는 상태에서 사용합니다.
+
+파일 소유권은 다음 기준을 따릅니다.
+
+| 분류 | 예시 | upgrade 동작 |
+| --- | --- | --- |
+| `harness-owned` | `.roo/**`, `.roomodes`, `.scratch/phase-state.schema.json`, `scripts/harness.py` | 설치된 hash와 다르면 충돌 보고, 아니면 갱신 |
+| `managed` | `AGENTS.md`, `README.md` | 현재는 파일 단위로 충돌 보고, 이후 managed block 병합 후보 |
+| `project-owned` | `.planning/**`, `.scratch/phase-state.json` | init 때만 생성, upgrade는 보존 |
+| `exclude` | `.git`, `.db-context/**`, generated artifacts | 설치/업그레이드 대상 아님 |
+
+clean skeleton에는 특정 프로젝트명, 완료된 phase 기록, PR 번호, live DB snapshot 진행 상태가 들어가면 안 됩니다. 그런 정보는 하네스 개발 repo의 `.planning/**` 또는 타겟 프로젝트의 project-owned 문서에만 둡니다.
 
 ## 큰 작업 흐름
 
@@ -315,7 +341,7 @@ snapshot 파일은 민감할 수 있으므로 `.db-context/`와 생성된 SQL/jo
 | `diagnose` | 승인된 plan의 bugfix code | docs, `.planning/`, `.scratch/`, Roo harness 파일 |
 | `ops-observability` | 승인된 plan의 ops/application code | docs, `.planning/`, `.scratch/`, Roo harness 파일 |
 | `review` | 읽기 전용 | 수정, mutation-capable command |
-| `harness-maintainer` | `.roomodes`, `.roo/**`, phase approval JSON, `AGENTS.md`, `CLAUDE.md` | application 구현 |
+| `harness-maintainer` | `.roomodes`, `.roo/**`, `harness/**`, `scripts/harness.py`, `scripts/test_harness.py`, phase approval JSON, `AGENTS.md`, `CLAUDE.md`, 하네스 문서 | application 구현 |
 
 중요한 점은 planning mode가 `.planning/`을 유지하고, implementation mode는 `.planning/`을 건드리지 않는다는 것입니다.
 
@@ -383,6 +409,10 @@ Phase 폴더 기본 패턴:
 ## 검증 명령
 
 ```bash
+python3 scripts/harness.py check
+python3 scripts/harness.py check --worktree
+python3 -m unittest scripts/test_harness.py
+python3 -m py_compile scripts/harness.py scripts/test_harness.py
 jq . .roomodes >/dev/null
 npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.json
 npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.example.json
@@ -392,6 +422,16 @@ README와 실제 Roo 설정이 어긋나는지 확인하려면 command, mode, sk
 
 ```bash
 rg -n "workflow-planning-hydration|workflow-simple-task|workflow-feature-tdd|workflow-etl-pipeline|workflow-db-change|workflow-phase-gate|db-context-snapshot|needs-db-context" README.md .roo docs
+```
+
+PR 전에는 아래 검증도 함께 실행합니다.
+
+```bash
+python3 -m unittest scripts/test_db_context_snapshot.py
+tmp="$(mktemp -d)"
+python3 scripts/harness.py init --target "$tmp/target"
+python3 scripts/harness.py check --target "$tmp/target"
+(cd "$tmp/target" && python3 scripts/harness.py check)
 ```
 
 현재 상태와 다음 작업은 항상 [.planning/STATE.md](.planning/STATE.md)에서 시작합니다.
