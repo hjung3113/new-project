@@ -35,3 +35,9 @@
 - **Status**: Complete.
 - **Evidence**: `AGENTS.md`, `README.md`, `docs/phase-gate-harness.md`, `.roo/commands/README.md`, `.roo/commands/adr.md`, `.roo/rules/phase-gate.md`, `.roo/skills/workflow-architecture-decision/SKILL.md`, `.roo/skills/workflow-planning-hydration/SKILL.md`, `.roo/skills/workflow-phase-gate/SKILL.md`, `.scratch/phase-state.schema.json`, `scripts/harness.py`, `scripts/test_harness.py`, `harness/manifest.json`, `harness/skeleton/clean/**`.
 - **Restart**: Run harness verification, then open a PR for `codex/harness-distribution-hardening`.
+
+## CP-03-07 - README workflow prompt examples added
+
+- **Status**: Complete.
+- **Evidence**: `README.md`, `harness/skeleton/clean/README.md`.
+- **Restart**: Run harness verification, then push the requested README onboarding update.

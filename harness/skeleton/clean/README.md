@@ -26,3 +26,77 @@ To upgrade later, run the newer harness source against this project:
 ```bash
 python3 /path/to/newer-harness/scripts/harness.py upgrade --target .
 ```
+
+## Workflow Prompts
+
+Use explicit prompts when adopting the harness in an existing project. State the analysis scope, editable files, expected planning output, and stop conditions.
+
+### Full Existing-Project Hydration
+
+```text
+I want to apply this Roo/Codex harness to this existing repository.
+Do not implement yet. Run the planning hydration workflow first.
+Inventory README, build/test configuration, src/tests, docs, ADRs, existing .planning, and .scratch state.
+Hydrate .planning/codebase/** and active phase documents from the real repository.
+Ask only for product intent or phase-boundary decisions the repo cannot answer.
+Classify stale/template/previous-project planning files as keep/archive/delete candidate/needs-human, but do not delete them.
+```
+
+### Limited-Scope Hydration
+
+```text
+Apply the harness first to <scope>, not the entire repository.
+Limit analysis to <example: ingestion pipeline, billing module, docs/adr only, src/Foo plus tests/FooTests>.
+Read files outside that scope only to understand ownership, dependencies, or risk.
+Record confirmed scope and unknown scope separately in .planning/codebase/**.
+Propose the first phase as the smallest usable slice inside that scope.
+```
+
+### Existing Planning May Be Stale
+
+```text
+This repository already has .planning/ and .scratch/phase-state.json, but I do not know whether they are current.
+Do not implement. Reconcile planning only.
+Classify the planning state as absent/template-only/stale/partial/usable.
+Find statements that conflict with repository evidence.
+Separate safe documentation repairs from decisions that need human confirmation.
+Do not change phase-state to execute until I explicitly approve it.
+```
+
+### Design Document Already Exists
+
+```text
+Use <document path> as the input for planning.
+Split it into fixed requirements, decisions, open questions, and implementation slice candidates.
+If .planning/codebase/** is missing or stale, return to repository hydration first.
+Do not implement. Produce a phase-local discuss summary and a first plan candidate for /issues or /adr.
+Attach owner workflow, allowed_paths candidates, and verification candidates to each slice.
+```
+
+### DB or ETL Project
+
+```text
+This project depends on DB/ETL behavior.
+Check whether .db-context/latest.json exists before making schema, migration, stored procedure, SQL Agent job, writer, restart, or idempotency claims.
+If DB context is missing or insufficient, return needs-db-context instead of guessing.
+Record which decisions can be made from repo files and which require a DB snapshot.
+```
+
+### Small Docs-Only Harness Change
+
+```text
+This is a small docs-only harness change, not an application behavior change.
+Use the simple workflow. Read AGENTS.md, .planning/STATE.md, active checkpoint, and .scratch/phase-state.json.
+Edit only allowed documentation or harness paths.
+After the change, verify that README, AGENTS, planning docs, and workflow names still agree.
+```
+
+### Read-Only Harness Review
+
+```text
+This request is read-only review.
+Do not modify files.
+Check whether AGENTS.md, README.md, .planning/STATE.md, .planning/ROADMAP.md,
+.planning/codebase/**, active phase docs, and .scratch/phase-state.json point to the same current state.
+Report findings by severity with file and line evidence.
+```

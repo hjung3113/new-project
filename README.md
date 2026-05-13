@@ -103,6 +103,102 @@ clean skeleton에는 특정 프로젝트명, 완료된 phase 기록, PR 번호, 
 
 이 단계가 끝나기 전에는 `/adr`, `/issues`, `/feature`, `/bugfix`, `/etl`, `/db`, `/ops`가 `.planning/`을 신뢰하면 안 됩니다.
 
+#### 기존 프로젝트 적용 프롬프트 예시
+
+기존 프로젝트에 하네스를 적용할 때는 “분석 범위”, “건드려도 되는 파일”, “산출물”, “멈춰야 하는 조건”을 프롬프트에 명시합니다. 아래 예시는 그대로 붙여 넣고 프로젝트 상황만 바꿔 쓰는 용도입니다.
+
+**전체 repo를 처음 분석할 때**
+
+```text
+이 저장소에 Roo/Codex 하네스를 적용하려고 한다.
+먼저 구현하지 말고 workflow-planning-hydration으로 현재 repo를 inventory해라.
+README, build/test 설정, src/tests, docs, ADR, 기존 .planning/.scratch 상태를 읽고
+.planning/codebase/**와 active phase 문서를 현재 repo 기준으로 채우는 계획을 세워라.
+repo가 답할 수 있는 내용은 직접 확인하고, 제품 의도나 phase 경계처럼 repo가 답할 수 없는 질문만 한 번에 하나씩 물어라.
+stale/template/previous-project planning 문서는 keep/archive/delete candidate/needs-human으로 분류하고 삭제하지 마라.
+```
+
+**일부 범위만 분석하면 될 때**
+
+```text
+하네스를 이 repo 전체가 아니라 <범위>에 먼저 적용하고 싶다.
+분석 범위는 <예: ingestion pipeline, billing module, docs/adr only, src/Foo + tests/FooTests>로 제한해라.
+범위 밖 파일은 ownership, dependency, risk 파악에 필요한 경우에만 읽고 수정하지 마라.
+.planning/codebase/**에는 전체 repo를 아는 척하지 말고, 확인된 범위와 확인하지 않은 범위를 분리해서 기록해라.
+첫 phase도 이 범위 안의 smallest usable slice로만 제안해라.
+```
+
+**기존 `.planning/`이 있는데 신뢰하기 어려울 때**
+
+```text
+이 repo에는 이미 .planning/과 .scratch/phase-state.json이 있지만 최신 상태인지 모르겠다.
+구현하지 말고 planning hydration/reconciliation만 수행해라.
+현재 문서를 absent/template-only/stale/partial/usable로 판정하고,
+repo evidence와 충돌하는 문장을 파일별로 찾아라.
+고칠 수 있는 문서 보정안과 사람 확인이 필요한 결정은 분리해라.
+phase-state는 내가 명시적으로 승인하기 전까지 execute로 바꾸지 마라.
+```
+
+**이미 PRD/ADR/설계 문서가 있을 때**
+
+```text
+<문서 경로>를 기준으로 하네스 planning을 맞춰라.
+문서를 요구사항, 결정, 열린 질문, 구현 slice 후보로 분해해라.
+.planning/codebase/**가 없거나 stale이면 먼저 현재 repo 분석으로 되돌아가라.
+바로 구현하지 말고 /issues 또는 /adr에 넘길 수 있는 phase-local discuss summary와 첫 plan 후보를 작성해라.
+각 slice에는 owner workflow, allowed_paths 후보, verification 후보를 붙여라.
+```
+
+**DB/ETL 의존 코드가 있는 프로젝트일 때**
+
+```text
+이 repo는 DB/ETL 동작이 중요하다.
+하네스 적용 전 .db-context/latest.json이 있는지 확인하고, 없거나 부족하면 needs-db-context를 반환해라.
+DB schema, migration, stored procedure, SQL Agent job, writer/restart/idempotency 판단은 추측하지 마라.
+planning에는 어떤 판단이 repo 파일만으로 가능하고 어떤 판단이 DB snapshot을 요구하는지 분리해서 기록해라.
+```
+
+**작은 문서/설정 변경만 필요할 때**
+
+```text
+이번 요청은 application behavior가 아니라 작은 docs-only 하네스 변경이다.
+/simple로 처리하되 AGENTS.md, .planning/STATE.md, active checkpoint, .scratch/phase-state.json을 읽고
+allowed_paths 안에서만 수정해라.
+변경 후 README/AGENTS/planning 간 restart order나 workflow 이름이 어긋나지 않는지 rg로 확인하고,
+필요한 최소 harness check만 실행해라.
+```
+
+**하네스 설치 후 첫 feature를 시작할 때**
+
+```text
+이제 하네스가 설치된 기존 프로젝트에서 첫 feature phase를 시작하려고 한다.
+바로 구현하지 말고 이 feature 전용 discuss pass부터 시작해라.
+현재 .planning/codebase/**가 이 repo를 정확히 설명하는지 확인하고,
+첫 usable slice, 비목표, allowed_paths 후보, verification 후보를 정리해라.
+phase plan을 쓰기 전 적대적 전문가 2명과 각 3개 관점으로 리뷰하고,
+저추론 모델도 실행할 수 있을 만큼 질문과 acceptance criteria가 구체적인지 확인해라.
+```
+
+**리뷰 또는 점검만 하고 싶을 때**
+
+```text
+이 요청은 read-only review다.
+파일을 수정하지 말고 하네스 적용 상태를 점검해라.
+AGENTS.md, README.md, .planning/STATE.md, .planning/ROADMAP.md,
+.planning/codebase/**, active phase docs, .scratch/phase-state.json이 서로 같은 현재 위치를 가리키는지 확인해라.
+문제는 severity 순으로 파일/라인 근거와 함께 보고하고, 수정은 별도 요청 전까지 하지 마라.
+```
+
+#### 기존 프로젝트 적용 체크리스트
+
+- 먼저 `python3 scripts/harness.py init --target /path/to/project`로 하네스를 설치하되, 기존 파일 충돌이 있으면 멈추고 diff를 검토합니다.
+- 설치 직후에는 target repo 안에서 `python3 scripts/harness.py check`를 실행합니다.
+- `.planning/codebase/**`가 template placeholder라면 어떤 workflow도 구현을 시작하지 않습니다.
+- 분석 범위를 전체 repo로 할지, 특정 subsystem으로 할지 먼저 정합니다.
+- 이전 프로젝트 이름, 완료된 phase, PR 번호, 다른 stack의 테스트 명령이 남아 있으면 stale planning으로 분류합니다.
+- `.scratch/phase-state.json`은 full planning memory가 아니라 현재 허용 작업의 gate입니다. planning hydration만 하는 동안에는 execute 승인을 만들지 않습니다.
+- application code 변경은 `phase=execute`, `approved=true`, 같은 `plan_id`, `allowed_paths`, `verification`이 모두 맞을 때만 시작합니다.
+
 ### 3. 설계 문서가 이미 있을 때
 
 요구사항 문서, 설계 문서, ADR, PRD, 또는 외부 명세가 있다면 `/issues` 또는 `/adr`로 시작합니다.

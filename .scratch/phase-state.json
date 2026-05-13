@@ -8,8 +8,8 @@
   "plan_path": ".planning/phases/03-harness-distribution-enforcement/03-01-PLAN.md",
   "state_path": ".planning/STATE.md",
   "checkpoint_path": ".planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md",
-  "current_checkpoint": "CP-03-06",
-  "next_action": "After merge, push main only if requested; otherwise start the next change from a new phase-local discuss.",
+  "current_checkpoint": "CP-03-07",
+  "next_action": "Run harness verification, commit the README onboarding prompt examples, and push main as requested.",
   "allowed_paths": [
     "AGENTS.md",
     "README.md",
@@ -48,7 +48,8 @@
   ],
   "notes": [
     "Upgrade is run from a newer harness source tree against a target project.",
-    "Installed targets can run local check without a source manifest."
+    "Installed targets can run local check without a source manifest.",
+    "README now includes workflow-specific prompt examples for existing-project adoption and scoped planning hydration."
   ],
   "automation_mode": "manual",
   "auto_selected": [],

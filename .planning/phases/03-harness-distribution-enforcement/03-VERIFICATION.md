@@ -32,3 +32,18 @@ Two adversarial expert reviews were run after adding alignment automation harden
 
 - Low-reasoning workflow review found and resolved: `--chain` approval ambiguity, unauditable `auto_selected`, abstract phase-local questions, vague `--auto` stop conditions, and an optional mandatory low-reasoning lens.
 - Roo/harness distribution review found and resolved: stale live phase-state authorization, stale worktree verification evidence, advisory-only automation semantics, restart-order drift, and missing clean skeleton handoff protocol.
+
+## CP-03-07 README Prompt Examples Verification
+
+Fresh local run on 2026-05-14 after adding workflow-specific onboarding prompt examples:
+
+- `python3 -m unittest scripts/test_harness.py`: passed, 13 tests.
+- `python3 -m unittest scripts/test_db_context_snapshot.py`: passed, 9 tests.
+- `python3 -m py_compile scripts/harness.py scripts/test_harness.py`: passed.
+- `python3 scripts/harness.py check`: passed.
+- `python3 scripts/harness.py check --worktree`: passed.
+- `jq . .roomodes >/dev/null`: passed.
+- `phase-state.json` AJV validation: passed.
+- `phase-state.example.json` AJV validation: passed.
+- Installed-target lifecycle smoke test: passed.
+- README/workflow drift search for prompt examples, workflow names, `needs-db-context`, and `CP-03-07`: passed.
