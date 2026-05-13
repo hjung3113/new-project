@@ -12,6 +12,7 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 | User entry | Primary scope | Workflow or mode | Owner |
 | --- | --- | --- | --- |
 | `/review` | Read-only review of code, SQL, tests, ETL, reliability, or operations risk | `workflow-code-review` | `review` |
+| existing-project harness adoption, planning docs are missing/stale/placeholder-only, or user asks to fill `.planning/` from an existing repo | Durable planning memory hydration and stale planning reconciliation | `workflow-planning-hydration` | `architect` or `docs-issues` |
 | `/db` | MSSQL schema, EF migration, SQL query, index, transaction, Dapper, `SqlBulkCopy`, `MERGE`, or persistence migration | `workflow-db-change` | `db-migration` |
 | `/etl` | Parser, normalization, correction, state machine, event matching, merge/aggregate, buffering, bulk writer flow, replay, restart safety | `workflow-etl-pipeline` | `etl-pipeline` |
 | `/ops` or ops-observability request | Structured logs, metrics, processing events, retry boundaries, worker polling, graceful shutdown, dashboards, runbooks | `workflow-ops-observability` | `ops-observability` |
@@ -25,6 +26,8 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 ## Tie Breakers
 
 - If the request says review, inspect, audit, scan, or pre-merge, use `/review` even when the files are ETL, DB, or ops files.
+- If the user asks to apply the harness to an existing project, fill planning docs, reconcile stale `.planning/` files, or make ADR work use existing project context, use `workflow-planning-hydration` before `/adr`, `/issues`, or implementation workflows.
+- If `/adr` is requested but `.planning/codebase/**` or active `.planning/phases/**` is missing, placeholder-only, stale, or unrelated to the current repo, run `workflow-planning-hydration` first and return to `/adr` only after planning context is usable.
 - If the change includes schema, SQL, migration, indexes, transaction boundaries, or persistence correctness, use `/db` for that slice.
 - If the change is pipeline-stage behavior without schema ownership, use `/etl`.
 - If the change is observability or worker lifecycle without parser/state/schema ownership, use `ops-observability`.
