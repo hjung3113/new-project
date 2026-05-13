@@ -26,7 +26,8 @@ This repository is a harness template, not an application. Its defaults are for 
 - JSON validation target: `.scratch/phase-state.schema.json`.
 - JSON examples: `.scratch/phase-state.example.json` and live `.scratch/phase-state.json`.
 - Mode validation: `.roomodes` is JSON and should be checked with `jq . .roomodes`.
-- Future mechanical enforcement belongs to Phase 2 in `.planning/ROADMAP.md`.
+- Mechanical enforcement belongs to Phase 3 in `.planning/ROADMAP.md` and is implemented through `scripts/harness.py check`.
+- Harness distribution uses `harness/manifest.json` plus clean project-owned templates under `harness/skeleton/clean/`.
 
 ## Non-Goals
 
