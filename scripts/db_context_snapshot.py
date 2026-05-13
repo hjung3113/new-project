@@ -398,12 +398,32 @@ def collect_agent_jobs(cursor: Any, *, redact: bool, max_definition_chars: int) 
         return {"steps": [], "schedules": [], "warnings": [f"Could not read SQL Agent metadata from msdb: {type(exc).__name__}: {message}"]}
 
 
-def can_reuse_cached_database(cached_database: dict[str, Any] | None, *, identity: dict[str, Any], collection_scope: str, change_markers: list[dict[str, Any]]) -> bool:
+def collection_options(args: argparse.Namespace) -> dict[str, Any]:
+    return {
+        "redact": bool(args.redact),
+        "max_definition_chars": args.max_definition_chars,
+        "redaction_version": 1,
+    }
+
+
+def can_reuse_cached_database(
+    cached_database: dict[str, Any] | None,
+    *,
+    identity: dict[str, Any],
+    collection_scope: str,
+    change_markers: list[dict[str, Any]],
+    options: dict[str, Any],
+) -> bool:
     if not cached_database:
         return False
     if cached_database.get("collection_scope") != collection_scope:
         return False
-    if cached_database.get("identity", {}).get("database_name") != identity.get("database_name"):
+    cached_identity = cached_database.get("identity", {})
+    if cached_identity.get("server_name") != identity.get("server_name"):
+        return False
+    if cached_identity.get("database_name") != identity.get("database_name"):
+        return False
+    if cached_database.get("collection_options") != options:
         return False
     return cached_database.get("change_marker_fingerprint") == digest(change_markers)
 
@@ -415,12 +435,14 @@ def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool, 
         configure_readonly_session(cursor, lock_timeout_ms=args.lock_timeout_ms)
         identity = collect_database_identity(cursor)
         change_markers = collect_change_markers(cursor)
+        options = collection_options(args)
         collection_scope = "full" if full else "shape"
-        if can_reuse_cached_database(cached_database, identity=identity, collection_scope=collection_scope, change_markers=change_markers):
+        if can_reuse_cached_database(cached_database, identity=identity, collection_scope=collection_scope, change_markers=change_markers, options=options):
             reused = dict(cached_database or {})
             reused["identity"] = identity
             reused["change_markers"] = change_markers
             reused["change_marker_fingerprint"] = digest(change_markers)
+            reused["collection_options"] = options
             reused["reused_from_cache"] = True
             return reused
         database: dict[str, Any] = {
@@ -440,6 +462,7 @@ def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool, 
             "sequences": [],
             "synonyms": [],
             "collection_scope": collection_scope,
+            "collection_options": options,
             "change_markers": change_markers,
             "change_marker_fingerprint": digest(change_markers),
             "reused_from_cache": False,
@@ -717,6 +740,10 @@ def render_jobs_markdown(agent_jobs: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_jobs_not_collected_markdown() -> str:
+    return "# SQL Agent Jobs\n\nSQL Agent jobs were not collected for this snapshot. Refresh with `--include-agent-jobs` when job steps or schedules matter.\n"
+
+
 def split_artifacts(report: dict[str, Any], output_dir: Path) -> None:
     write_text(output_dir / LATEST_MD, render_markdown(report))
     routines_index: list[dict[str, Any]] = []
@@ -729,6 +756,8 @@ def split_artifacts(report: dict[str, Any], output_dir: Path) -> None:
     write_text(output_dir / "routines.sql", "\n\nGO\n\n".join(part for part in routines_sql_parts if part).rstrip() + "\n")
     if "agent_jobs" in report:
         write_text(output_dir / "jobs.md", render_jobs_markdown(report["agent_jobs"]))
+    else:
+        write_text(output_dir / "jobs.md", render_jobs_not_collected_markdown())
 
 
 def load_cached_report(output_dir: Path) -> dict[str, Any]:

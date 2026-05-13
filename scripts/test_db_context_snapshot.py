@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -67,7 +68,8 @@ class DbContextSnapshotTests(unittest.TestCase):
     def test_refresh_reuses_cached_database_when_change_markers_match(self) -> None:
         args = argparse.Namespace(redact=True, max_definition_chars=300_000, login_timeout_seconds=15, lock_timeout_ms=5_000)
         cached_database = self.database("reference", "full")
-        cached_database["identity"] = {"database_name": "reference"}
+        cached_database["identity"] = {"server_name": "server-a", "database_name": "reference"}
+        cached_database["collection_options"] = snap.collection_options(args)
         cached_database["change_markers"] = [{"kind": "table", "schema_name": "dbo", "object_name": "Orders", "modify_date": "2026-05-13T00:00:00"}]
         cached_database["change_marker_fingerprint"] = snap.digest(cached_database["change_markers"])
 
@@ -77,7 +79,7 @@ class DbContextSnapshotTests(unittest.TestCase):
         with (
             mock.patch.object(snap, "connect", return_value=connection),
             mock.patch.object(snap, "configure_readonly_session"),
-            mock.patch.object(snap, "collect_database_identity", return_value={"database_name": "reference"}),
+            mock.patch.object(snap, "collect_database_identity", return_value={"server_name": "server-a", "database_name": "reference"}),
             mock.patch.object(snap, "collect_change_markers", return_value=cached_database["change_markers"]),
             mock.patch.object(snap, "collect_tables", side_effect=AssertionError("heavy collection should be skipped")),
         ):
@@ -90,6 +92,51 @@ class DbContextSnapshotTests(unittest.TestCase):
 
         self.assertTrue(database["reused_from_cache"])
         connection.close.assert_called_once()
+
+    def test_refresh_does_not_reuse_cache_with_different_redaction_options(self) -> None:
+        args = argparse.Namespace(redact=True, max_definition_chars=300_000, login_timeout_seconds=15, lock_timeout_ms=5_000)
+        cached_database = self.database("reference", "full")
+        cached_database["identity"] = {"server_name": "server-a", "database_name": "reference"}
+        cached_database["collection_options"] = {"redact": False, "max_definition_chars": 300_000}
+        markers = [{"kind": "table", "schema_name": "dbo", "object_name": "Orders", "modify_date": "2026-05-13T00:00:00"}]
+        cached_database["change_marker_fingerprint"] = snap.digest(markers)
+
+        self.assertFalse(
+            snap.can_reuse_cached_database(
+                cached_database,
+                identity={"server_name": "server-a", "database_name": "reference"},
+                collection_scope="full",
+                change_markers=markers,
+                options=snap.collection_options(args),
+            )
+        )
+
+    def test_refresh_does_not_reuse_cache_with_different_server_identity(self) -> None:
+        args = argparse.Namespace(redact=True, max_definition_chars=300_000, login_timeout_seconds=15, lock_timeout_ms=5_000)
+        cached_database = self.database("reference", "full")
+        cached_database["identity"] = {"server_name": "server-a", "database_name": "reference"}
+        cached_database["collection_options"] = snap.collection_options(args)
+        markers = [{"kind": "table", "schema_name": "dbo", "object_name": "Orders", "modify_date": "2026-05-13T00:00:00"}]
+        cached_database["change_marker_fingerprint"] = snap.digest(markers)
+
+        self.assertFalse(
+            snap.can_reuse_cached_database(
+                cached_database,
+                identity={"server_name": "server-b", "database_name": "reference"},
+                collection_scope="full",
+                change_markers=markers,
+                options=snap.collection_options(args),
+            )
+        )
+
+    def test_split_artifacts_replaces_stale_jobs_file_when_jobs_not_collected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            (output_dir / "jobs.md").write_text("stale job command", encoding="utf-8")
+
+            snap.split_artifacts({"master_database": self.database("master", "full"), "process_databases": []}, output_dir)
+
+            self.assertIn("SQL Agent jobs were not collected", (output_dir / "jobs.md").read_text(encoding="utf-8"))
 
     @staticmethod
     def database(

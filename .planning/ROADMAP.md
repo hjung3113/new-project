@@ -38,7 +38,7 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 
 1. A local snapshot command reads `.db-context/latest.json` by default without connecting to DB.
 2. Explicit refresh collects fixed catalog metadata for one master DB and many process DBs.
-3. Refresh reuses cached database detail when object `modify_date` markers are unchanged.
+3. Refresh reuses cached database detail when object `modify_date` markers, target identity, and collection options are unchanged.
 4. DB, ETL, review, and ops workflows return `needs-db-context` when required DB context is missing or insufficient.
 
 **Plans**: 1 plan.

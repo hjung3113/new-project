@@ -95,7 +95,7 @@ A drift report is always produced when more than one process database is supplie
 
 ## Refresh Cache Reuse
 
-During `--refresh`, the tool first reads lightweight change markers from catalog metadata: table, stored procedure, function, view, and trigger `modify_date` values. If a database's marker fingerprint matches the cached snapshot and the collection scope is unchanged, the tool reuses that database's cached detail instead of collecting the full table/index/routine metadata again.
+During `--refresh`, the tool first reads lightweight change markers from catalog metadata: table, stored procedure, function, view, and trigger `modify_date` values. If a database's marker fingerprint matches the cached snapshot, the collection scope is unchanged, the server/database identity is unchanged, and the redaction/truncation options are unchanged, the tool reuses that database's cached detail instead of collecting the full table/index/routine metadata again.
 
 This still requires a database connection because the tool must verify whether objects changed. It reduces repeated transfer of large stored procedure, function, view, and trigger definitions when the database shape has not changed.
 

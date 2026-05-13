@@ -31,11 +31,11 @@
     "The snapshot tool defaults to offline cache reads and rejects contradictory --refresh --offline usage.",
     "Refresh uses fixed MSSQL catalog queries and does not execute arbitrary SQL or stored procedures.",
     "Default process DB comparison uses shape fingerprints to avoid false drift from full-only reference details.",
-    "Refresh reuses cached database detail when table, routine, view, function, and trigger modify_date markers are unchanged.",
+    "Refresh reuses cached database detail when table, routine, view, function, trigger modify_date markers, target identity, and collection options are unchanged.",
     "Generated DB context artifacts are ignored by git by default.",
     "Roo workflow skills read .db-context/ first and return needs-db-context when required context is missing or insufficient.",
     "The orchestrator handoff contract recognizes needs-db-context.",
-    "Focused Python tests cover no-connect safety, cache reuse, redaction, drift comparison, and ignore defaults."
+    "Focused Python tests cover no-connect safety, cache reuse, cache non-reuse safety, stale job artifact replacement, redaction, drift comparison, and ignore defaults."
   ],
   "verification": [
     "python3 -m unittest scripts/test_db_context_snapshot.py",

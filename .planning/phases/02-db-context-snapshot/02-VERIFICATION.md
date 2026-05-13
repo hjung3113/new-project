@@ -21,7 +21,7 @@ Not run. Refresh requires explicit human approval plus DB connection strings and
 
 ## Results
 
-- `python3 -m unittest scripts/test_db_context_snapshot.py`: 6 tests passed.
+- `python3 -m unittest scripts/test_db_context_snapshot.py`: 9 tests passed.
 - `python3 -m py_compile scripts/db_context_snapshot.py scripts/test_db_context_snapshot.py`: passed.
 - `python3 scripts/db_context_snapshot.py --help`: passed.
 - `python3 scripts/db_context_snapshot.py --format json`: failed as expected because `.db-context/latest.json` is absent and no refresh was approved.

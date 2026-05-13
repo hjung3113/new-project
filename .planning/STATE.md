@@ -24,7 +24,7 @@ progress:
 
 - **Phase**: 2 - DB Context Snapshot **IMPLEMENTED**.
 - **Plan**: 02-01 complete - cache-first MSSQL metadata snapshot tooling, tests, docs, and Roo workflow integration.
-- **Status**: DB context snapshots default to offline cache reads. Explicit refresh can collect fixed catalog metadata, reuse cached database detail when `modify_date` markers are unchanged, and return `needs-db-context` when context is missing or insufficient.
+- **Status**: DB context snapshots default to offline cache reads. Explicit refresh can collect fixed catalog metadata, reuse cached database detail when `modify_date` markers, target identity, and collection options are unchanged, and return `needs-db-context` when context is missing or insufficient.
 - **Progress**: Phase 2: 1/1 plan complete; 2/5 phases overall.
 
 ## Active Checkpoint
@@ -44,7 +44,7 @@ progress:
 - Roo `architect` and `docs-issues` modes own `.planning/` edits; implementation modes must not mutate durable planning memory.
 - README is the Korean human entry guide for skills, workflows, modes, phase gate, zero-to-done operating flow, and verification commands.
 - DB-dependent Roo workflows should read `.db-context/` first and return `needs-db-context` when required context is missing, stale, or insufficient.
-- DB context refresh may reuse cached per-database detail when table/routine/trigger `modify_date` markers are unchanged.
+- DB context refresh may reuse cached per-database detail when table/routine/trigger `modify_date` markers, server/database identity, and redaction/truncation options are unchanged.
 
 ### Outstanding open questions
 
