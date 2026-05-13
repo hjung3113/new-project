@@ -11,9 +11,10 @@ description: Runs the architecture decision workflow for pipeline boundaries, st
 1. Gather context.
    - Read `AGENTS.md`, `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/codebase/**`, the active `.planning/phases/**` document set, `CONTEXT.md`, `docs/adr/`, relevant requirements, and current code.
    - Treat `.planning/codebase/**` and `.planning/phases/**` as first-class ADR inputs, not optional extras.
-   - When adopting this harness into an existing repository, inspect the actual repository structure, README, build/test files, and existing ADR/planning artifacts before writing or updating templates.
+   - When adopting this harness into an existing repository, inspect the actual repository structure, README, build/test files, and existing ADR/planning artifacts before writing or updating decisions.
    - Use project vocabulary.
-   - Stop if enough context is not available to name the actual decision, unless the requested work is `project init`; in that case, create or hydrate the missing planning context first.
+   - If `.planning/codebase/**` or active `.planning/phases/**` is missing, stale, unrelated to the current repository, or placeholder-only, stop ADR work and run `workflow-planning-hydration` first.
+   - Stop if enough context is not available to name the actual decision.
 
 2. Frame the decision.
    - State the problem, constraints, non-goals, and affected workflows.
@@ -37,19 +38,21 @@ description: Runs the architecture decision workflow for pipeline boundaries, st
    - Keep implementation slices linked from the active phase plan/checkpoint when they belong to the current phase.
    - Do not implement the slices in this workflow.
 
-6. Handle `project init` for existing repositories (when requested).
-   - Detect whether `.planning/`, `.planning/codebase/`, `.planning/phases/`, ADR docs, or historical planning artifacts already exist before writing templates.
-   - If `.planning/codebase/` is missing or placeholder-only, create or hydrate at least: `ARCHITECTURE.md`, `STACK.md`, `STRUCTURE.md`, `CONVENTIONS.md`, `TESTING.md`, `INTEGRATIONS.md`, and `CONCERNS.md` from the real repository.
-   - If `.planning/phases/` is missing, stale, or unrelated to the current repo, create or hydrate an active phase folder with context, plan, checkpoints, review, verification, and summary placeholders tied to the current request.
-   - Run planning hydration for existing projects so `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/codebase/**`, and active phase checkpoints include current repository metadata instead of placeholders.
-   - Reconcile stale planning artifacts by classifying each legacy file as keep, archive, or delete candidate; keep an explicit follow-up list for uncertain items.
-   - Keep ordering deterministic: inventory existing context -> hydrate missing/stale planning memory -> record or update ADR decisions -> sync active phase checkpoint -> cleanup/reconcile stale planning artifacts.
-   - Preserve idempotency: repeated init runs should converge without duplicating sections or reintroducing stale template content.
+## Existing Repository Planning Context
+
+Do not fold existing-repository planning hydration into this workflow. Use `workflow-planning-hydration` first, then return to ADR once planning context is usable.
+
+ADR may proceed only when:
+
+- `.planning/codebase/**` describes the current repository.
+- `.planning/phases/**` has an active phase document set relevant to the current work.
+- `.planning/STATE.md`, `.planning/ROADMAP.md`, and `.scratch/phase-state.json` do not point at unrelated template or previous-project artifacts.
 
 ## Routing
 
 - Primary owner: architecture/ADR work.
-- ADR and `project init` planning-memory work may read and update `.planning/codebase/**` and `.planning/phases/**` through `architect` or `docs-issues`.
+- Route missing/stale existing-project planning context to `workflow-planning-hydration` before ADR.
+- ADR planning-memory work may update `.planning/DECISIONS.md`, active phase docs, and matching `.planning/codebase/**` notes after hydration is complete.
 - Route Roo, slash-command, AGENTS.md, CLAUDE.md, `.roo/**`, and `.roomodes` changes to `harness-maintainer`.
 - Route follow-up implementation slices to `tdd-code`, `etl-pipeline`, or `db-migration` based on the affected boundary.
 - Route review-only follow-up to `review`.
@@ -57,6 +60,7 @@ description: Runs the architecture decision workflow for pipeline boundaries, st
 ## Hard Rules
 
 - Architect mode does not implement application code.
-- Do not skip `.planning/codebase/**` or `.planning/phases/**` during ADR/project-init work because those folders are the durable design and phase memory.
+- Do not skip `.planning/codebase/**` or `.planning/phases/**` during ADR work because those folders are the durable design and phase memory.
+- Do not use ADR as a substitute for `workflow-planning-hydration` when the repo planning memory is absent, stale, or placeholder-only.
 - Do not adopt frameworks only to make diagrams cleaner.
 - Do not turn this workflow into sample project or domain implementation.
