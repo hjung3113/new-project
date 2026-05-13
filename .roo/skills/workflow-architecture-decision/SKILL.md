@@ -32,6 +32,13 @@ description: Runs the architecture decision workflow for pipeline boundaries, st
    - Assign recommended modes for each slice.
    - Do not implement the slices in this workflow.
 
+6. Handle `project init` for existing repositories (when requested).
+   - Detect whether `.planning/`, ADR docs, or historical planning artifacts already exist before writing templates.
+   - Run planning hydration for existing projects so `.planning/STATE.md`, `.planning/ROADMAP.md`, and active phase checkpoints include current repository metadata instead of placeholders.
+   - Reconcile stale planning artifacts by classifying each legacy file as keep, archive, or delete candidate; keep an explicit follow-up list for uncertain items.
+   - Keep ADR-first ordering deterministic: generate/update ADR decisions first, then hydrate planning docs, then cleanup/reconcile stale planning artifacts.
+   - Preserve idempotency: repeated init runs should converge without duplicating sections or reintroducing stale template content.
+
 ## Routing
 
 - Primary owner: architecture/ADR work.
