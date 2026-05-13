@@ -18,11 +18,14 @@ Before doing any work:
 2. Read `.planning/STATE.md`.
 3. Read `.planning/ROADMAP.md`.
 4. Read the active phase checkpoint file named in `.planning/STATE.md`.
-5. Read the phase state file if one exists.
-6. Identify `phase`, `plan_id`, `approved`, `state_path`, `plan_path`, `checkpoint_path`, `current_checkpoint`, `allowed_paths`, and `verification`.
-7. For `plan`, `execute`, and `done`, read `state_path`, `plan_path`, and `checkpoint_path` before classifying allowed work. If any pointer is missing or stale, treat the state as incomplete and return to `plan`.
-8. If there is no state file, start in `discuss`.
-9. Do only the work allowed by the current phase.
+5. Read `.planning/codebase/ARCHITECTURE.md`, `STACK.md`, `STRUCTURE.md`, `CONVENTIONS.md`, `TESTING.md`, `INTEGRATIONS.md`, and `CONCERNS.md` when they exist.
+6. Read the active phase context, plan, review, verification, and summary files under `.planning/phases/` when they exist.
+7. Read the phase state file if one exists.
+8. Identify `phase`, `plan_id`, `approved`, `state_path`, `plan_path`, `checkpoint_path`, `current_checkpoint`, `allowed_paths`, and `verification`.
+9. For `plan`, `execute`, and `done`, read `state_path`, `plan_path`, and `checkpoint_path` before classifying allowed work. If any pointer is missing or stale, treat the state as incomplete and return to `plan`.
+10. If `.planning/codebase/**` or the active phase document set is missing, placeholder-only, or stale for the current repository, treat the gate as incomplete for existing-repository adoption and return to `plan` to hydrate planning memory.
+11. If there is no state file, start in `discuss`.
+12. Do only the work allowed by the current phase.
 
 ## Phase Rules
 
@@ -58,6 +61,7 @@ Next step:
 Allowed:
 
 - Write or update docs, PRDs, ADRs, checklists, or local issue-plan files.
+- Hydrate `.planning/codebase/**` and active `.planning/phases/**` documents from the real repository during `project init` or existing-repository adoption.
 - Define acceptance criteria.
 - Define test strategy and verification commands.
 - Define exact implementation scope and file ownership.
@@ -73,6 +77,7 @@ Output:
 
 - A concrete plan with `plan_id`.
 - Scope, non-goals, touched paths, acceptance criteria, and verification.
+- Planning-memory updates made or required, including `.planning/codebase/**` and active phase files.
 - Approval request to enter `execute`.
 
 Next step:
@@ -94,6 +99,7 @@ Required:
 - Every execute response must cite the approved `plan_id`.
 - Confirm the requested edits are inside `allowed_paths`.
 - Confirm `verification` is non-empty before editing.
+- Confirm `.planning/codebase/**` and the active phase docs are not stale relative to the approved plan.
 - If implementation scope changes, stop and return to `plan`.
 
 Forbidden:
@@ -120,6 +126,7 @@ Allowed:
 - Summarize results.
 - Record final verification.
 - Identify follow-up work as new discuss or plan candidates.
+- Update `.planning/STATE.md`, the active phase checkpoint, and verification/summary docs to make the next session resumable.
 
 Forbidden:
 
@@ -145,6 +152,7 @@ phase: <discuss|plan|execute|done>
 plan_id: <id or none>
 approved: <true|false>
 allowed_work: <read-only|docs-plan-only|implementation|summary-only>
+planning_context: <complete|needs-codebase-hydration|needs-phase-hydration|stale>
 next_step: <one concrete next action>
 ```
 
@@ -156,4 +164,5 @@ next_step: <one concrete next action>
 - Stop before implementation if `phase=execute` but `plan_id` is missing.
 - Stop before implementation if `phase=execute` but `allowed_paths` is empty.
 - Stop before implementation if `phase=execute` but `verification` is empty.
+- Stop before implementation if existing-repository planning context is missing or stale.
 - Stop if the requested change is outside the approved plan.
