@@ -102,7 +102,7 @@ return_required:
 ### Required Return Shape
 
 ```text
-status: <done|blocked|needs-plan|needs-review|failed>
+status: <done|blocked|needs-plan|needs-db-context|needs-review|failed>
 changed_files:
   - <path-or-none>
 evidence:

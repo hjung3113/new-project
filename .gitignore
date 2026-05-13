@@ -1,0 +1,5 @@
+.db-context/
+*.db-context.json
+*.db-context.md
+routines.sql
+jobs.md
