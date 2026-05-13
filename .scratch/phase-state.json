@@ -8,7 +8,7 @@
   "plan_path": ".planning/phases/01-document-centered-phase-continuity/01-01-PLAN.md",
   "state_path": ".planning/STATE.md",
   "checkpoint_path": ".planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md",
-  "current_checkpoint": "CP-01-05",
+  "current_checkpoint": "CP-01-07",
   "next_action": "Resolve ROO-8 allowed_paths semantics, then create .planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md and 02-01-PLAN.md for dual-channel pre-commit + CI enforcement.",
   "allowed_paths": [
     ".planning/",
@@ -39,6 +39,6 @@
     "Phase 1 is documentation and harness-state work only.",
     "Mechanical path enforcement remains Phase 2."
   ],
-  "updated_at": "2026-05-11T14:47:08.000Z",
+  "updated_at": "2026-05-13T14:30:05.000Z",
   "updated_by": "codex"
 }
