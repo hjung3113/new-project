@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
 status: Phase 1 implemented - Korean README now documents full zero-to-done workflow
-last_updated: "2026-05-13T14:27:26.000Z"
+last_updated: "2026-05-13T14:30:05.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -29,7 +29,7 @@ progress:
 
 ## Active Checkpoint
 
-- **Checkpoint**: CP-01-06 - ROO-7 enforcement-channel decision captured.
+- **Checkpoint**: CP-01-07 - Existing-repository adoption guardrails documented.
 - **Checkpoint file**: `.planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md`.
 - **Restart instruction**: Read this file, then `ROADMAP.md`, then the active phase checkpoint file. If starting Phase 2, create `.planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md` before planning implementation.
 
@@ -87,4 +87,4 @@ Files of record:
 
 ## Next Action
 
-Enforcement scope decision is now captured in `.scratch/phase-2-gates/issues/01-enforcement-channel.md` (both pre-commit and CI). Recommended next action: resolve `allowed_paths` semantics, then create `02-CONTEXT.md` and `02-01-PLAN.md`.
+Enforcement scope decision is now captured in `.scratch/phase-2-gates/issues/01-enforcement-channel.md` (both pre-commit and CI). Recommended next action: Resolve ROO-8 allowed_paths semantics, then create `.planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md` and `02-01-PLAN.md` for dual-channel pre-commit + CI enforcement.

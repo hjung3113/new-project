@@ -35,3 +35,9 @@
 - **Status**: Complete.
 - **Evidence**: `.scratch/phase-2-gates/issues/01-enforcement-channel.md` and `.planning/STATE.md`.
 - **Restart**: Proceed to ROO-8 (`allowed_paths` semantics), then start Phase 2 context/plan documents.
+
+## CP-01-07 - Existing-repository adoption guardrails documented
+
+- **Status**: Complete.
+- **Evidence**: `AGENTS.md`, `README.md`, `.planning/HANDOFF-PROTOCOL.md`, `.roo/rules-orchestrator/rules.md`, `.roo/rules/phase-gate.md`, and `.roo/skills/workflow-planning-hydration/SKILL.md`.
+- **Restart**: Resolve ROO-8 (`allowed_paths` semantics), then start Phase 2 context/plan documents for dual-channel pre-commit + CI enforcement.

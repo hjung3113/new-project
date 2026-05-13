@@ -20,6 +20,13 @@ Use this workflow only when all are true:
 
 ## Simple Task Types
 
+## Execution Model
+
+`answer-only` simple tasks may stay inline in the orchestrator.
+
+All other simple task types must still respect owner mode boundaries. If the task edits files, runs commands, changes behavior, or updates harness/planning state, create a subtask in the owning mode.
+
+
 - `answer-only`: Answer a focused question, explain a nearby file, locate a setting, or give a short recommendation. No file edits.
 - `docs-only`: Fix typos, stale references, headings, README notes, comments, or harness documentation.
 - `command-only`: Run a harmless command and report the output. Do not run mutating generators, dependency installs, migrations, or deploy commands.

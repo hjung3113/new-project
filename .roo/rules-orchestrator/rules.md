@@ -12,6 +12,7 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 | User entry | Primary scope | Workflow or mode | Owner |
 | --- | --- | --- | --- |
 | `/review` | Read-only review of code, SQL, tests, ETL, reliability, or operations risk | `workflow-code-review` | `review` |
+| existing-project harness adoption, planning docs are missing/stale/placeholder-only, or user asks to fill `.planning/` from an existing repo | Durable planning memory hydration and stale planning reconciliation | `workflow-planning-hydration` | `architect` or `docs-issues` |
 | `/db` | MSSQL schema, EF migration, SQL query, index, transaction, Dapper, `SqlBulkCopy`, `MERGE`, or persistence migration | `workflow-db-change` | `db-migration` |
 | `/etl` | Parser, normalization, correction, state machine, event matching, merge/aggregate, buffering, bulk writer flow, replay, restart safety | `workflow-etl-pipeline` | `etl-pipeline` |
 | `/ops` or ops-observability request | Structured logs, metrics, processing events, retry boundaries, worker polling, graceful shutdown, dashboards, runbooks | `workflow-ops-observability` | `ops-observability` |
@@ -25,6 +26,8 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 ## Tie Breakers
 
 - If the request says review, inspect, audit, scan, or pre-merge, use `/review` even when the files are ETL, DB, or ops files.
+- If the user asks to apply the harness to an existing project, fill planning docs, reconcile stale `.planning/` files, or make ADR work use existing project context, use `workflow-planning-hydration` before `/adr`, `/issues`, or implementation workflows.
+- If `/adr` is requested but `.planning/codebase/**` or active `.planning/phases/**` is missing, placeholder-only, stale, or unrelated to the current repo, run `workflow-planning-hydration` first and return to `/adr` only after planning context is usable.
 - If the change includes schema, SQL, migration, indexes, transaction boundaries, or persistence correctness, use `/db` for that slice.
 - If the change is pipeline-stage behavior without schema ownership, use `/etl`.
 - If the change is observability or worker lifecycle without parser/state/schema ownership, use `ops-observability`.
@@ -36,3 +39,64 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 
 - Delegate implementation to the narrowest mode that owns the concern.
 - Require verification evidence before completion.
+
+## Subtask-First Execution
+
+- Main session routes only: classify, choose workflow, prepare handoff packets, collect structured results, route follow-up work, and report final status.
+- Main session must not execute implementation, debugging, review, planning hydration, ADR writing, PRD/issue generation, broad code exploration, verification commands, or mutation-capable commands inline.
+- For every non-trivial step, create a focused Roo `new_task` in the owning mode.
+- If `new_task` is unavailable, output the handoff packet and stop instead of executing inline.
+
+### Required Handoff Packet
+
+```text
+mode: <owning-mode>
+workflow: <workflow-skill-or-direct-mode>
+goal: <one-verifiable-outcome>
+phase: <discuss|plan|execute|done>
+plan_id: <id-or-none>
+approved: <true|false>
+read_first:
+  - AGENTS.md
+  - .planning/STATE.md
+  - .planning/ROADMAP.md
+  - .planning/codebase/ARCHITECTURE.md
+  - .planning/codebase/STACK.md
+  - .planning/codebase/STRUCTURE.md
+  - .planning/codebase/CONVENTIONS.md
+  - .planning/codebase/TESTING.md
+  - .planning/codebase/INTEGRATIONS.md
+  - .planning/codebase/CONCERNS.md
+  - <active phase files>
+  - .scratch/phase-state.json
+focused_files:
+  - <task-specific files>
+allowed_writes:
+  - <paths allowed by mode and phase gate>
+blocked_writes:
+  - <paths not allowed>
+verification_expected:
+  - <commands or evidence>
+return_required:
+  - status
+  - changed_files
+  - evidence
+  - blockers
+  - scope_deviations
+  - next_recommended_route
+```
+
+### Required Subtask Result
+
+```text
+status: <done|blocked|needs-plan|needs-review|failed>
+changed_files:
+  - <path-or-none>
+evidence:
+  - <command-result-or-document-evidence>
+blockers:
+  - <blocker-or-none>
+scope_deviations:
+  - <deviation-or-none>
+next_recommended_route: <mode/workflow-or-none>
+```
