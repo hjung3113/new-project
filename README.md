@@ -6,6 +6,13 @@
 
 ## 핵심 원칙
 
+## 오케스트레이터/서브태스크 실행 모델
+
+메인 orchestrator 세션은 의도적으로 작게 유지합니다. 요청을 분류하고, workflow를 고르고, owning mode에 집중된 subtask를 만들고, 구조화된 결과를 수집한 뒤 최종 상태를 보고합니다.
+
+즉 planning, review, implementation, debugging, verification 같은 실제 작업은 specialist mode가 수행하고, orchestrator는 non-trivial step을 inline으로 실행하지 않습니다.
+
+
 - 모든 요청은 하나의 소유 workflow로 라우팅합니다.
 - 질문, 작은 문서 수정, 오타, 무해한 명령 실행, 기계적 정리, 즉시 검증 가능한 작은 변경은 `/simple`로 처리할 수 있습니다.
 - 구현은 반드시 `discuss -> plan -> execute -> done` phase gate를 통과합니다.

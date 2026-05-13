@@ -9,7 +9,7 @@
   "state_path": ".planning/STATE.md",
   "checkpoint_path": ".planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md",
   "current_checkpoint": "CP-01-05",
-  "next_action": "Start Phase 2 by creating .planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md after choosing pre-commit, CI, or both.",
+  "next_action": "Resolve ROO-8 allowed_paths semantics, then create .planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md and 02-01-PLAN.md for dual-channel pre-commit + CI enforcement.",
   "allowed_paths": [
     ".planning/",
     ".scratch/phase-state.json",

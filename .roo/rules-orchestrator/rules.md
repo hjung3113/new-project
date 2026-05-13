@@ -39,3 +39,64 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 
 - Delegate implementation to the narrowest mode that owns the concern.
 - Require verification evidence before completion.
+
+## Subtask-First Execution
+
+- Main session routes only: classify, choose workflow, prepare handoff packets, collect structured results, route follow-up work, and report final status.
+- Main session must not execute implementation, debugging, review, planning hydration, ADR writing, PRD/issue generation, broad code exploration, verification commands, or mutation-capable commands inline.
+- For every non-trivial step, create a focused Roo `new_task` in the owning mode.
+- If `new_task` is unavailable, output the handoff packet and stop instead of executing inline.
+
+### Required Handoff Packet
+
+```text
+mode: <owning-mode>
+workflow: <workflow-skill-or-direct-mode>
+goal: <one-verifiable-outcome>
+phase: <discuss|plan|execute|done>
+plan_id: <id-or-none>
+approved: <true|false>
+read_first:
+  - AGENTS.md
+  - .planning/STATE.md
+  - .planning/ROADMAP.md
+  - .planning/codebase/ARCHITECTURE.md
+  - .planning/codebase/STACK.md
+  - .planning/codebase/STRUCTURE.md
+  - .planning/codebase/CONVENTIONS.md
+  - .planning/codebase/TESTING.md
+  - .planning/codebase/INTEGRATIONS.md
+  - .planning/codebase/CONCERNS.md
+  - <active phase files>
+  - .scratch/phase-state.json
+focused_files:
+  - <task-specific files>
+allowed_writes:
+  - <paths allowed by mode and phase gate>
+blocked_writes:
+  - <paths not allowed>
+verification_expected:
+  - <commands or evidence>
+return_required:
+  - status
+  - changed_files
+  - evidence
+  - blockers
+  - scope_deviations
+  - next_recommended_route
+```
+
+### Required Subtask Result
+
+```text
+status: <done|blocked|needs-plan|needs-review|failed>
+changed_files:
+  - <path-or-none>
+evidence:
+  - <command-result-or-document-evidence>
+blockers:
+  - <blocker-or-none>
+scope_deviations:
+  - <deviation-or-none>
+next_recommended_route: <mode/workflow-or-none>
+```
