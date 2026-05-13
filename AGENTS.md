@@ -16,9 +16,11 @@ This repo uses the single-context domain docs layout: root `CONTEXT.md` plus `do
 
 ### Planning state
 
-Fresh sessions must start with `.planning/STATE.md`, then `.planning/ROADMAP.md`, then the active phase checkpoint under `.planning/phases/`. Use `.scratch/phase-state.json` as the live phase gate only after reading the durable planning docs.
+Fresh sessions must start with `.planning/STATE.md`, then `.planning/ROADMAP.md`, then `.planning/codebase/**`, then the active phase checkpoint under `.planning/phases/`. Use `.scratch/phase-state.json` as the live phase gate only after reading the durable planning docs.
 
 When a phase, checkpoint, blocker, or next action changes, update `.planning/STATE.md` and the active phase `*-CHECKPOINTS.md` before ending the session.
+
+For an existing repository that adopts this harness, `.planning/codebase/**` and `.planning/phases/**` are not optional. If those folders are missing, placeholder-only, or still describe the template/previous project, the correct workflow is to return to `plan` and hydrate/reconcile planning memory before ADR or implementation work continues.
 
 ## Codex Cloud
 
@@ -37,10 +39,14 @@ For any new Codex task:
 1. Read `AGENTS.md`.
 2. Read `.planning/STATE.md`.
 3. Read `.planning/ROADMAP.md`.
-4. Read the active phase checkpoint named in `.planning/STATE.md`.
-5. Read `.scratch/phase-state.json`.
+4. Read `.planning/codebase/ARCHITECTURE.md`, `STACK.md`, `STRUCTURE.md`, `CONVENTIONS.md`, `TESTING.md`, `INTEGRATIONS.md`, and `CONCERNS.md` when they exist.
+5. Read the active phase checkpoint named in `.planning/STATE.md`.
+6. Read the active phase context, plan, review, verification, and summary files under `.planning/phases/` when they exist.
+7. Read `.scratch/phase-state.json`.
 
 If `.scratch/phase-state.json` is not `phase=execute` with `approved=true`, do not modify application code. Documentation, harness, and setup changes are allowed only when the user explicitly asks for those repository-control changes.
+
+When asked for `/adr` or `project init` on an existing repository, first check whether `.planning/codebase/**` and `.planning/phases/**` describe the current repository. If not, hydrate those documents from the actual repository before relying on ADR output or phase-state approval.
 
 When asked to review a pull request, prioritize phase-gate violations, accidental application-code edits outside `allowed_paths`, missing verification evidence, and mismatches between README, `.roo/**`, `.planning/**`, and `.scratch/phase-state.json`.
 
