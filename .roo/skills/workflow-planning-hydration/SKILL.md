@@ -73,6 +73,17 @@ Hydrate or create these files when they are missing or placeholder-only:
 
 Update `.scratch/phase-state.json` only when the user explicitly asks for harness/planning-control changes or when the current task is already scoped to phase-state repair. Keep it in `discuss` or `plan` unless implementation has been explicitly approved.
 
+
+## Execution Model
+
+When invoked from `orchestrator`, do not execute this workflow inline.
+
+The orchestrator must create a focused subtask in the owning mode and pass the required handoff packet from `.roo/rules-orchestrator/rules.md`.
+
+The owning mode must reload durable context from `.planning/` and `.scratch/phase-state.json`, perform only its owned work, and return the required structured result.
+
+If the task cannot proceed because planning context is missing, stale, placeholder-only, or outside the approved phase gate, return `needs-plan` instead of guessing.
+
 ## Steps
 
 ### 1. Inventory the repository
