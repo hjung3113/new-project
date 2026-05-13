@@ -1,71 +1,24 @@
-# ROADMAP - Roo Harness Hardening
+# ROADMAP - Project Template
 
-Granularity: standard. This roadmap is intentionally document-centered: each phase has a folder under `.planning/phases/` and can be resumed from its checkpoint documents.
+이 문서는 프로젝트별 phase 계획을 기록하는 템플릿입니다.
 
 ## Phases
 
-- [x] **Phase 1: Document-Centered Phase Continuity** - Add `.planning/` project memory, phase/checkpoint structure, and gate alignment so fresh sessions can continue without transcript state.
-- [ ] **Phase 2: Mechanical Gate Enforcement** - Add pre-commit or CI checks that validate `.scratch/phase-state.json` and changed paths against the approved plan.
-- [ ] **Phase 3: Template Consumer Onboarding** - Add concise bootstrap instructions for cloning this harness into a target C# ETL project.
-- [ ] **Phase 4: Example ETL Slice** - Add a minimal sample phase plan for a real parser or writer change, proving the harness works end to end.
+- [ ] **Phase 1: <name>** - goal summary
+- [ ] **Phase 2: <name>** - goal summary
 
 ## Phase Details
 
-### Phase 1: Document-Centered Phase Continuity
+### Phase 1: <name>
 
-**Goal**: Make the repo self-resumable through `.planning/`, not chat memory.
+**Goal**: 
 
-**Depends on**: Current Roo harness scaffold.
-
-**Success Criteria**:
-
-1. `.planning/PROJECT.md`, `REQUIREMENTS.md`, `ROADMAP.md`, and `STATE.md` exist and identify the project, requirements, phases, current position, decisions, and next action.
-2. The active phase folder contains context, plan, checkpoints, review, summary, and verification files.
-3. `AGENTS.md` tells future agents to start from `.planning/STATE.md`.
-4. `docs/phase-gate-harness.md` explains how `.scratch/phase-state.json` points back to `.planning/` docs.
-5. The handoff file is rewritten to reference the durable docs and avoid stale Roo/C#-only review state.
-
-**Plans**: 1 plan.
-
-### Phase 2: Mechanical Gate Enforcement
-
-**Goal**: Convert prompt-level phase discipline into repository checks.
-
-**Depends on**: Phase 1.
+**Depends on**: 
 
 **Success Criteria**:
 
-1. A local validation command verifies `.scratch/phase-state.json` against `.scratch/phase-state.schema.json`.
-2. A changed-path check fails when implementation edits fall outside `allowed_paths`.
-3. The enforcement workflow is documented with bypass policy and limitations.
-
-**Plans**: TBD.
-
-### Phase 3: Template Consumer Onboarding
-
-**Goal**: Make a new project team able to adopt the harness without reading every rule file.
-
-**Depends on**: Phase 1.
-
-**Success Criteria**:
-
-1. README or docs include a bootstrap checklist.
-2. The checklist explains how to replace project placeholders, create initial `.planning/` docs, and start a first phase.
-3. The checklist identifies which files are template internals and which are target-project memory.
-
-**Plans**: TBD.
-
-### Phase 4: Example ETL Slice
-
-**Goal**: Prove the workflow against one realistic ETL change plan.
-
-**Depends on**: Phase 2 or explicit user approval to keep enforcement prompt-only.
-
-**Success Criteria**:
-
-1. Example phase includes context, plan, red evidence, implementation scope, green evidence, summary, and review.
-2. MSSQL test expectations use real container-backed checks.
-3. The example can be copied into a target project as a starting template.
+1. 
+2. 
 
 **Plans**: TBD.
 
@@ -73,15 +26,5 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 
 | Phase | Plans Complete | Status | Completed |
 | --- | ---: | --- | --- |
-| 1. Document-Centered Phase Continuity | 1/1 | Implemented | 2026-05-11 |
-| 2. Mechanical Gate Enforcement | 0/? | Not started | - |
-| 3. Template Consumer Onboarding | 0/? | Not started | - |
-| 4. Example ETL Slice | 0/? | Not started | - |
-
-## Coverage
-
-- REQ-continuity -> Phase 1.
-- REQ-phase-checkpoints -> Phase 1 and all future phase folders.
-- REQ-decision-capture -> Phase 1.
-- REQ-verification-chain -> Phase 1 and all future phase summaries.
-- REQ-gate-alignment -> Phase 1 and Phase 2.
+| 1. <name> | 0/0 | Not started | - |
+| 2. <name> | 0/0 | Not started | - |

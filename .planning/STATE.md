@@ -1,63 +1,55 @@
 ---
 gsd_state_version: 1.0
-milestone: m1
-milestone_name: reusable low-reasoning Roo harness
-status: Phase 1 implemented - Korean README now documents full zero-to-done workflow
-last_updated: "2026-05-11T14:47:08.000Z"
+milestone: m0
+milestone_name: initial project setup
+status: template baseline
+last_updated: "2026-05-13T00:00:00.000Z"
 progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 25
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
-# STATE - Roo C# ETL Orchestration Template
+# STATE - Project Template
 
 ## Project Reference
 
-- **Core value**: A reusable Roo Code harness that keeps low-reasoning models inside explicit workflows for C#/.NET ETL projects.
-- **Current milestone**: Milestone 1 - reusable low-reasoning Roo harness.
-- **Current focus**: Phase 2 candidate - mechanical gate enforcement.
+- **Core value**: Fill this with your project's value statement.
+- **Current milestone**: Define active milestone.
+- **Current focus**: Define immediate planning focus.
 
 ## Current Position
 
-- **Phase**: 1 - Document-Centered Phase Continuity **IMPLEMENTED**.
-- **Plan**: 01-01 complete - `.planning/` memory, active phase folder, checkpoint protocol, gate alignment docs, and refreshed handoff.
-- **Status**: Durable project memory now lives under `.planning/`. Roo planning modes can maintain `.planning/`, implementation modes cannot edit it, and README now documents the Korean zero-to-done workflow from initial idea/design documents through planning, execution, review, and completion.
-- **Progress**: Phase 1: 1/1 plan complete; 1/4 phases overall.
+- **Phase**: `discuss|plan|execute|done`
+- **Plan**: Active `plan_id` (if any)
+- **Status**: One-sentence current status
+- **Progress**: Update as phases and plans complete
 
 ## Active Checkpoint
 
-- **Checkpoint**: CP-01-05 - Handoff refreshed.
-- **Checkpoint file**: `.planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md`.
-- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active phase checkpoint file. If starting Phase 2, create `.planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md` before planning implementation.
+- **Checkpoint**: e.g., `CP-01-01`
+- **Checkpoint file**: `.planning/phases/<phase>/<NN-CHECKPOINTS.md>`
+- **Restart instruction**: Read `AGENTS.md` -> `STATE.md` -> `ROADMAP.md` -> active checkpoint -> `.scratch/phase-state.json`
 
 ## Accumulated Context
 
 ### Decisions in force
 
-- `.planning/` is canonical project memory.
-- `.scratch/phase-state.json` is a live phase gate and must point to `.planning/` docs.
-- Every phase closes with summary and verification evidence.
-- Handoff documents should reference durable docs and avoid duplicating phase content.
-- Roo `architect` and `docs-issues` modes own `.planning/` edits; implementation modes must not mutate durable planning memory.
-- README is the Korean human entry guide for skills, workflows, modes, phase gate, zero-to-done operating flow, and verification commands.
+- Keep only currently valid decisions.
 
 ### Outstanding open questions
 
-- Whether `allowed_paths` should support globs, path prefixes, or exact paths only in the first mechanical checker.
-- Whether template adoption docs should live in README or a dedicated docs file.
+- Track unresolved questions blocking plan quality.
 
 ### Deferred queue
 
-- Mechanical phase gate enforcement.
-- Template consumer onboarding.
-- Example ETL slice.
+- Track intentionally deferred work.
 
 ### Blockers
 
-- None active for Phase 1.
+- Track active blockers and owner.
 
 ## Session Continuity
 
@@ -68,23 +60,9 @@ Files of record:
 - `.planning/ROADMAP.md`
 - `.planning/STATE.md`
 - `.planning/DECISIONS.md`
-- `.planning/HANDOFF-PROTOCOL.md`
 - `.planning/VERIFICATION.md`
-- `.planning/codebase/ARCHITECTURE.md`
-- `.planning/codebase/STACK.md`
-- `.planning/codebase/STRUCTURE.md`
-- `.planning/codebase/CONVENTIONS.md`
-- `.planning/codebase/TESTING.md`
-- `.planning/codebase/INTEGRATIONS.md`
-- `.planning/codebase/CONCERNS.md`
 - `.scratch/phase-state.json`
-- `.planning/phases/01-document-centered-phase-continuity/01-CONTEXT.md`
-- `.planning/phases/01-document-centered-phase-continuity/01-01-PLAN.md`
-- `.planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md`
-- `.planning/phases/01-document-centered-phase-continuity/01-REVIEW.md`
-- `.planning/phases/01-document-centered-phase-continuity/01-VERIFICATION.md`
-- `.planning/phases/01-document-centered-phase-continuity/01-01-SUMMARY.md`
 
 ## Next Action
 
-Enforcement scope decision is now captured in `.scratch/phase-2-gates/issues/01-enforcement-channel.md` (both pre-commit and CI). Recommended next action: resolve `allowed_paths` semantics, then create `02-CONTEXT.md` and `02-01-PLAN.md`.
+Write the next concrete step for the next session.
