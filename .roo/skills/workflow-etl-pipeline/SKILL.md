@@ -21,9 +21,9 @@ If the task cannot proceed because planning context is missing, stale, placehold
 
 When the task depends on actual output tables, staging tables, merge keys, indexes, stored procedures, functions, SQL Agent jobs, writer behavior, idempotency, replay, reprocess, or restart-safety, read `.db-context/latest.json` before making conclusions.
 
-Use `.db-context/routines.index.json` to locate writer-facing stored procedures, functions, and views. Use `.db-context/routines.sql` for exact SQL control-flow review. Use `.db-context/jobs.md` if ETL execution depends on SQL Agent jobs or schedules.
+Use `.db-context/routines.index.json` to locate writer-facing stored procedures, functions, and views. Use `.db-context/routines.sql` for exact SQL control-flow review. Use `.db-context/jobs.md` if ETL execution depends on SQL Agent jobs or schedules and the snapshot was refreshed with `--include-agent-jobs`.
 
-Do not connect to the database by default. If `.db-context/` exists, use it as the source of truth. Only run `python scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
+Do not connect to the database by default. If `.db-context/` exists, use it as the source of truth. Only run `python3 scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
 
 If DB context is required but missing, stale, or insufficient, return `needs-db-context` instead of guessing or refreshing automatically.
 

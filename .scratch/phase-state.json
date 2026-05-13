@@ -1,44 +1,56 @@
 {
   "phase": "done",
-  "plan_id": "document-continuity-01-01",
+  "plan_id": "db-context-snapshot-02-01",
   "approved": true,
   "approved_by": "human",
-  "approved_at": "2026-05-11T00:00:00Z",
-  "summary": "Add durable .planning project memory so fresh sessions can resume phase-by-phase after reset.",
-  "plan_path": ".planning/phases/01-document-centered-phase-continuity/01-01-PLAN.md",
+  "approved_at": "2026-05-13T15:25:00Z",
+  "summary": "Add cache-first MSSQL DB context snapshot tooling and Roo workflow integration.",
+  "plan_path": ".planning/phases/02-db-context-snapshot/02-01-PLAN.md",
   "state_path": ".planning/STATE.md",
-  "checkpoint_path": ".planning/phases/01-document-centered-phase-continuity/01-CHECKPOINTS.md",
-  "current_checkpoint": "CP-01-07",
-  "next_action": "Resolve ROO-8 allowed_paths semantics, then create .planning/phases/02-mechanical-gate-enforcement/02-CONTEXT.md and 02-01-PLAN.md for dual-channel pre-commit + CI enforcement.",
+  "checkpoint_path": ".planning/phases/02-db-context-snapshot/02-CHECKPOINTS.md",
+  "current_checkpoint": "CP-02-05",
+  "next_action": "After PR #12 merges, return to ROO-8 allowed_paths semantics and mechanical gate enforcement planning.",
   "allowed_paths": [
+    ".gitignore",
     ".planning/",
     ".scratch/phase-state.json",
-    ".scratch/phase-state.schema.json",
-    ".scratch/phase-state.example.json",
-    "AGENTS.md",
-    "README.md",
-    "docs/phase-gate-harness.md"
+    ".roo/skills/workflow-code-review/SKILL.md",
+    ".roo/skills/workflow-db-change/SKILL.md",
+    ".roo/skills/workflow-etl-pipeline/SKILL.md",
+    ".roo/skills/workflow-ops-observability/SKILL.md",
+    ".roo/rules-orchestrator/rules.md",
+    "docs/db-context-snapshot.md",
+    "scripts/db_context_snapshot.py",
+    "scripts/test_db_context_snapshot.py"
   ],
   "blocked_paths": [
     "src/",
     "tests/"
   ],
   "acceptance_criteria": [
-    ".planning/STATE.md identifies the current phase, checkpoint, next action, and files of record.",
-    ".planning/ROADMAP.md lists phase boundaries and success criteria.",
-    "The active phase folder contains context, plan, checkpoints, review, verification, and summary.",
-    "AGENTS.md and docs/phase-gate-harness.md tell future sessions how .planning and .scratch/phase-state.json interact.",
-    "The temporary handoff points to durable planning docs instead of being the only continuity artifact."
+    "The snapshot tool defaults to offline cache reads and rejects contradictory --refresh --offline usage.",
+    "Refresh uses fixed MSSQL catalog queries and does not execute arbitrary SQL or stored procedures.",
+    "Default process DB comparison uses shape fingerprints to avoid false drift from full-only reference details.",
+    "Refresh reuses cached database detail when table, routine, view, function, and trigger modify_date markers are unchanged.",
+    "Generated DB context artifacts are ignored by git by default.",
+    "Roo workflow skills read .db-context/ first and return needs-db-context when required context is missing or insufficient.",
+    "The orchestrator handoff contract recognizes needs-db-context.",
+    "Focused Python tests cover no-connect safety, cache reuse, redaction, drift comparison, and ignore defaults."
   ],
   "verification": [
-    "find .planning -maxdepth 3 -type f | sort",
+    "python3 -m unittest scripts/test_db_context_snapshot.py",
+    "python3 -m py_compile scripts/db_context_snapshot.py scripts/test_db_context_snapshot.py",
+    "python3 scripts/db_context_snapshot.py --help",
+    "python3 scripts/db_context_snapshot.py --format json (expected failure without .db-context/latest.json)",
+    "jq . .roomodes >/dev/null",
     "npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.json",
-    "rg -n \"STATE.md|phase-state|checkpoint\" AGENTS.md README.md docs/phase-gate-harness.md .planning"
+    "! rg -n \"python scripts/db_context_snapshot.py\" docs .roo README.md",
+    "rg -n \"status: <done\\\\|blocked\\\\|needs-plan\\\\|needs-db-context\\\\|needs-review\\\\|failed>\" .roo .planning"
   ],
   "notes": [
-    "Phase 1 is documentation and harness-state work only.",
-    "Mechanical path enforcement remains Phase 2."
+    "Live MSSQL refresh was not run because DB credentials and explicit refresh approval were not provided.",
+    "Mechanical path enforcement remains the next roadmap hardening task."
   ],
-  "updated_at": "2026-05-13T14:30:05.000Z",
+  "updated_at": "2026-05-13T15:25:00.000Z",
   "updated_by": "codex"
 }

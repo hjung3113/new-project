@@ -21,9 +21,9 @@ If the task cannot proceed because planning context is missing, stale, placehold
 
 When the task depends on actual MSSQL tables, columns, indexes, foreign keys, stored procedures, functions, views, triggers, SQL Agent jobs, MERGE keys, writer behavior, idempotency, or restart-safety, read `.db-context/latest.json` before making conclusions.
 
-Use `.db-context/routines.index.json` to locate stored procedures, functions, and views. Use `.db-context/routines.sql` when exact SQL control flow, transaction boundaries, dynamic SQL, temp tables, cursor use, or MERGE semantics matter. Use `.db-context/jobs.md` when SQL Agent jobs or schedules may affect the change.
+Use `.db-context/routines.index.json` to locate stored procedures, functions, and views. Use `.db-context/routines.sql` when exact SQL control flow, transaction boundaries, dynamic SQL, temp tables, cursor use, or MERGE semantics matter. Use `.db-context/jobs.md` when SQL Agent jobs or schedules may affect the change and the snapshot was refreshed with `--include-agent-jobs`.
 
-Do not connect to the database by default. If `.db-context/` exists, it is the source of truth for analysis. Only run `python scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
+Do not connect to the database by default. If `.db-context/` exists, it is the source of truth for analysis. Only run `python3 scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
 
 If DB context is required but missing, stale, or insufficient, return `needs-db-context` instead of guessing or refreshing automatically.
 

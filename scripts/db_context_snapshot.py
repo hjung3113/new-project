@@ -28,9 +28,9 @@ LATEST_JSON = "latest.json"
 LATEST_MD = "latest.md"
 
 SECRET_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
-    (re.compile(r"(?i)\b(password|pwd)\s*=\s*[^;\s]+"), r"\1=<redacted>"),
-    (re.compile(r"(?i)\b(user\s+id|uid)\s*=\s*[^;\s]+"), r"\1=<redacted>"),
-    (re.compile(r"(?i)\b(access[_-]?token|api[_-]?key|secret)\s*[:=]\s*['\"]?[^'\"\s;]+"), r"\1=<redacted>"),
+    (re.compile(r"(?i)(\b(?:password|pwd)\b\s*=\s*)(?:N?'(?:''|[^'])*'|\"[^\"]*\"|[^;\r\n]+)"), r"\1<redacted>"),
+    (re.compile(r"(?i)(\b(?:user\s+id|uid)\b\s*=\s*)(?:N?'(?:''|[^'])*'|\"[^\"]*\"|[^;\r\n]+)"), r"\1<redacted>"),
+    (re.compile(r"(?i)(@?\b(?:access[_-]?token|api[_-]?key|secret)\b\s*[:=]\s*)(?:N?'(?:''|[^'])*'|\"[^\"]*\"|[^;,\r\n\s]+)"), r"\1<redacted>"),
     (re.compile(r"(?i)\b(bearer)\s+[a-z0-9._~+/=-]+"), r"\1 <redacted>"),
 )
 
@@ -127,7 +127,7 @@ def connect(connection_string: str, *, login_timeout_seconds: int) -> Any:
         import pyodbc  # type: ignore[import-not-found]
     except ModuleNotFoundError as exc:
         raise SystemExit(
-            "pyodbc is required for --refresh. Install it with `python -m pip install pyodbc` "
+            "pyodbc is required for --refresh. Install it with `python3 -m pip install pyodbc` "
             "and ensure a Microsoft ODBC Driver for SQL Server is installed."
         ) from exc
 
@@ -151,6 +151,28 @@ def collect_database_identity(cursor: Any) -> dict[str, Any]:
     )
     row = cursor.fetchone()
     return {column[0]: getattr(row, column[0]) for column in row.cursor_description}
+
+
+def collect_change_markers(cursor: Any) -> list[dict[str, Any]]:
+    return fetch_dicts(cursor, """
+        SELECT 'table' AS object_kind, s.name AS schema_name, t.name AS object_name,
+               t.object_id, t.modify_date
+        FROM sys.tables AS t
+        INNER JOIN sys.schemas AS s ON s.schema_id = t.schema_id
+        WHERE t.is_ms_shipped = 0
+        UNION ALL
+        SELECT 'module' AS object_kind, s.name AS schema_name, o.name AS object_name,
+               o.object_id, o.modify_date
+        FROM sys.objects AS o
+        INNER JOIN sys.schemas AS s ON s.schema_id = o.schema_id
+        WHERE o.is_ms_shipped = 0 AND o.type IN ('P', 'FN', 'IF', 'TF', 'V')
+        UNION ALL
+        SELECT 'trigger' AS object_kind, COALESCE(OBJECT_SCHEMA_NAME(tr.parent_id), '') AS schema_name,
+               tr.name AS object_name, tr.object_id, tr.modify_date
+        FROM sys.triggers AS tr
+        WHERE tr.is_ms_shipped = 0
+        ORDER BY object_kind, schema_name, object_name;
+    """, redact=False, max_definition_chars=0)
 
 
 def collect_tables(cursor: Any, *, redact: bool, max_definition_chars: int) -> list[dict[str, Any]]:
@@ -372,18 +394,39 @@ def collect_agent_jobs(cursor: Any, *, redact: bool, max_definition_chars: int) 
         """, redact=redact, max_definition_chars=max_definition_chars)
         return {"steps": steps, "schedules": schedules, "warnings": []}
     except Exception as exc:  # noqa: BLE001 - msdb access varies by environment.
-        return {"steps": [], "schedules": [], "warnings": [f"Could not read SQL Agent metadata from msdb: {type(exc).__name__}: {exc}"]}
+        message = redact_text(str(exc), redact)
+        return {"steps": [], "schedules": [], "warnings": [f"Could not read SQL Agent metadata from msdb: {type(exc).__name__}: {message}"]}
 
 
-def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool) -> dict[str, Any]:
+def can_reuse_cached_database(cached_database: dict[str, Any] | None, *, identity: dict[str, Any], collection_scope: str, change_markers: list[dict[str, Any]]) -> bool:
+    if not cached_database:
+        return False
+    if cached_database.get("collection_scope") != collection_scope:
+        return False
+    if cached_database.get("identity", {}).get("database_name") != identity.get("database_name"):
+        return False
+    return cached_database.get("change_marker_fingerprint") == digest(change_markers)
+
+
+def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool, cached_database: dict[str, Any] | None = None) -> dict[str, Any]:
     connection = connect(target.connection_string, login_timeout_seconds=args.login_timeout_seconds)
     try:
         cursor = connection.cursor()
         configure_readonly_session(cursor, lock_timeout_ms=args.lock_timeout_ms)
+        identity = collect_database_identity(cursor)
+        change_markers = collect_change_markers(cursor)
+        collection_scope = "full" if full else "shape"
+        if can_reuse_cached_database(cached_database, identity=identity, collection_scope=collection_scope, change_markers=change_markers):
+            reused = dict(cached_database or {})
+            reused["identity"] = identity
+            reused["change_markers"] = change_markers
+            reused["change_marker_fingerprint"] = digest(change_markers)
+            reused["reused_from_cache"] = True
+            return reused
         database: dict[str, Any] = {
             "role": target.role,
             "label": target.label,
-            "identity": collect_database_identity(cursor),
+            "identity": identity,
             "tables": collect_tables(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars),
             "columns": collect_columns(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars),
             "primary_keys": collect_primary_keys(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars),
@@ -396,7 +439,10 @@ def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool) 
             "user_defined_types": [],
             "sequences": [],
             "synonyms": [],
-            "collection_scope": "full" if full else "shape",
+            "collection_scope": collection_scope,
+            "change_markers": change_markers,
+            "change_marker_fingerprint": digest(change_markers),
+            "reused_from_cache": False,
         }
         if full:
             database["modules"] = collect_modules(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars)
@@ -406,7 +452,8 @@ def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool) 
             database["user_defined_types"] = collect_user_defined_types(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars)
             database["sequences"] = collect_sequences(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars)
             database["synonyms"] = collect_synonyms(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars)
-        database["schema_fingerprint"] = schema_fingerprint(database)
+        database["shape_fingerprint"] = schema_fingerprint(database, scope="shape")
+        database["schema_fingerprint"] = schema_fingerprint(database, scope="full" if full else "shape")
         return database
     finally:
         connection.close()
@@ -422,26 +469,31 @@ def collect_master_agent_jobs(master: DbTarget, args: argparse.Namespace) -> dic
         connection.close()
 
 
-def schema_fingerprint(database: dict[str, Any]) -> str:
+def schema_fingerprint(database: dict[str, Any], *, scope: str = "full") -> str:
     comparable = {
         "tables": sorted(({"schema": r["schema_name"], "table": r["table_name"], "temporal_type": r["temporal_type_desc"]} for r in database["tables"]), key=lambda r: (r["schema"], r["table"])),
         "columns": sorted(({k: r.get(k) for k in ("schema_name", "table_name", "column_id", "column_name", "type_schema", "type_name", "max_length", "precision", "scale", "is_nullable", "is_identity", "is_computed", "computed_definition", "default_definition")} for r in database["columns"]), key=lambda r: (r["schema_name"], r["table_name"], r["column_id"])),
         "primary_keys": database["primary_keys"],
         "foreign_keys": database["foreign_keys"],
         "indexes": database["indexes"],
-        "modules": {kind: [{"schema_name": r["schema_name"], "object_name": r["object_name"], "type": r["type"], "definition_hash": r.get("definition_hash") or digest(r.get("definition"))} for r in rows] for kind, rows in database.get("modules", {}).items()},
-        "triggers": [{"trigger_name": r["trigger_name"], "parent_schema": r["parent_schema"], "parent_name": r["parent_name"], "definition_hash": r.get("definition_hash") or digest(r.get("definition"))} for r in database.get("triggers", [])],
-        "user_defined_types": database.get("user_defined_types", []),
-        "sequences": database.get("sequences", []),
-        "synonyms": database.get("synonyms", []),
     }
+    if scope == "full":
+        comparable.update({
+            "modules": {kind: [{"schema_name": r["schema_name"], "object_name": r["object_name"], "type": r["type"], "definition_hash": r.get("definition_hash") or digest(r.get("definition"))} for r in rows] for kind, rows in database.get("modules", {}).items()},
+            "triggers": [{"trigger_name": r["trigger_name"], "parent_schema": r["parent_schema"], "parent_name": r["parent_name"], "definition_hash": r.get("definition_hash") or digest(r.get("definition"))} for r in database.get("triggers", [])],
+            "user_defined_types": database.get("user_defined_types", []),
+            "sequences": database.get("sequences", []),
+            "synonyms": database.get("synonyms", []),
+        })
     return digest(comparable)
 
 
-def object_set(database: dict[str, Any]) -> set[str]:
+def object_set(database: dict[str, Any], *, scope: str = "full") -> set[str]:
     objects: set[str] = set()
     for row in database["tables"]:
         objects.add(f"table:{row['schema_name']}.{row['table_name']}")
+    if scope == "shape":
+        return objects
     for kind, rows in database.get("modules", {}).items():
         for row in rows:
             objects.add(f"{kind}:{row['schema_name']}.{row['object_name']}")
@@ -454,15 +506,18 @@ def compare_process_databases(process_databases: list[dict[str, Any]]) -> dict[s
     if not process_databases:
         return {"reference_label": None, "comparisons": []}
     reference = process_databases[0]
-    reference_objects = object_set(reference)
+    reference_objects = object_set(reference, scope="shape")
+    reference_shape_fingerprint = reference.get("shape_fingerprint") or schema_fingerprint(reference, scope="shape")
     comparisons = []
     for database in process_databases[1:]:
-        objects = object_set(database)
+        objects = object_set(database, scope="shape")
+        shape_fingerprint = database.get("shape_fingerprint") or schema_fingerprint(database, scope="shape")
         comparisons.append({
             "label": database["label"],
             "database_name": database["identity"]["database_name"],
-            "matches_reference_fingerprint": database["schema_fingerprint"] == reference["schema_fingerprint"],
+            "matches_reference_fingerprint": shape_fingerprint == reference_shape_fingerprint,
             "schema_fingerprint": database["schema_fingerprint"],
+            "shape_fingerprint": shape_fingerprint,
             "missing_objects_vs_reference": sorted(reference_objects - objects),
             "extra_objects_vs_reference": sorted(objects - reference_objects),
         })
@@ -470,6 +525,7 @@ def compare_process_databases(process_databases: list[dict[str, Any]]) -> dict[s
         "reference_label": reference["label"],
         "reference_database_name": reference["identity"]["database_name"],
         "reference_schema_fingerprint": reference["schema_fingerprint"],
+        "reference_shape_fingerprint": reference_shape_fingerprint,
         "process_database_count": len(process_databases),
         "comparisons": comparisons,
     }
@@ -481,6 +537,7 @@ def summarize_database(database: dict[str, Any]) -> dict[str, Any]:
         "label": database["label"],
         "database_name": database["identity"]["database_name"],
         "collection_scope": database["collection_scope"],
+        "reused_from_cache": database.get("reused_from_cache", False),
         "schema_fingerprint": database["schema_fingerprint"],
         "table_count": len(database["tables"]),
         "column_count": len(database["columns"]),
@@ -493,6 +550,28 @@ def summarize_database(database: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def try_load_cached_report(output_dir: Path) -> dict[str, Any] | None:
+    path = output_dir / LATEST_JSON
+    if not path.exists():
+        return None
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def cached_database_by_role_label(cached_report: dict[str, Any] | None, role: str, label: str) -> dict[str, Any] | None:
+    if not cached_report:
+        return None
+    if role == "master":
+        database = cached_report.get("master_database")
+        if isinstance(database, dict) and database.get("label") == label:
+            return database
+        return None
+    for database in cached_report.get("process_databases", []):
+        if isinstance(database, dict) and database.get("label") == label:
+            return database
+    return None
+
+
 def build_report(args: argparse.Namespace) -> dict[str, Any]:
     if not args.master_connection:
         raise SystemExit("Missing master DB connection string. Use --master-connection or DB_CONTEXT_MASTER_CONNECTION.")
@@ -502,9 +581,18 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
 
     master_target = DbTarget("master", args.master_label, args.master_connection)
     process_targets = [DbTarget("process", label, connection) for label, connection in process_connections]
+    cached_report = try_load_cached_report(Path(args.output_dir))
 
-    master_database = collect_database(master_target, args, full=True)
-    process_databases = [collect_database(target, args, full=(index == 0 or not args.process_reference_only)) for index, target in enumerate(process_targets)]
+    master_database = collect_database(master_target, args, full=True, cached_database=cached_database_by_role_label(cached_report, "master", master_target.label))
+    process_databases = [
+        collect_database(
+            target,
+            args,
+            full=(index == 0 or not args.process_reference_only),
+            cached_database=cached_database_by_role_label(cached_report, "process", target.label),
+        )
+        for index, target in enumerate(process_targets)
+    ]
 
     report: dict[str, Any] = {
         "tool_version": TOOL_VERSION,
@@ -532,6 +620,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     report["summary"] = {
         "master": summarize_database(master_database),
         "process": [summarize_database(database) for database in process_databases],
+        "reused_database_count": sum(1 for database in [master_database, *process_databases] if database.get("reused_from_cache")),
         "agent_job_step_rows": len(report.get("agent_jobs", {}).get("steps", [])),
         "agent_job_schedule_rows": len(report.get("agent_jobs", {}).get("schedules", [])),
     }
@@ -601,7 +690,9 @@ def render_markdown(report: dict[str, Any]) -> str:
 
 def write_text(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
+    tmp_path = path.with_name(f".{path.name}.tmp")
+    tmp_path.write_text(content, encoding="utf-8")
+    tmp_path.replace(path)
 
 
 def append_routines(database: dict[str, Any], index: list[dict[str, Any]], sql_parts: list[str]) -> None:
@@ -671,14 +762,16 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
 
 def main(argv: Iterable[str] = sys.argv[1:]) -> int:
     args = parse_args(argv)
+    if args.refresh and args.offline:
+        raise SystemExit("--offline cannot be combined with --refresh.")
     output_dir = Path(args.output_dir)
     if not args.refresh:
         report = load_cached_report(output_dir)
     else:
         report = build_report(args)
         output_dir.mkdir(parents=True, exist_ok=True)
-        write_text(output_dir / LATEST_JSON, json.dumps(report, ensure_ascii=False, indent=2, default=str) + "\n")
         split_artifacts(report, output_dir)
+        write_text(output_dir / LATEST_JSON, json.dumps(report, ensure_ascii=False, indent=2, default=str) + "\n")
     if args.format == "json":
         sys.stdout.write(json.dumps(report, ensure_ascii=False, indent=2, default=str) + "\n")
     else:

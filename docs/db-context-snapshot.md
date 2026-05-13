@@ -19,7 +19,7 @@ The default behavior is cache-first and offline. If `.db-context/latest.json` ex
 A database connection is allowed only when the user explicitly asks to refresh database context. The command for that path is:
 
 ```bash
-python scripts/db_context_snapshot.py --refresh
+python3 scripts/db_context_snapshot.py --refresh
 ```
 
 If a task requires database context and no snapshot exists, the correct workflow result is `needs-db-context`, not a guessed answer and not an automatic database connection.
@@ -64,11 +64,17 @@ export DB_CONTEXT_PROCESS_CONNECTIONS='{
 The CLI also accepts repeated process connections:
 
 ```bash
-python scripts/db_context_snapshot.py \
+python3 scripts/db_context_snapshot.py \
   --refresh \
   --master-connection "$DB_CONTEXT_MASTER_CONNECTION" \
   --process-connection "process-a::$PROCESS_A_CONNECTION" \
   --process-connection "process-b::$PROCESS_B_CONNECTION"
+```
+
+SQL Agent metadata is optional. When job schedules or job steps matter, refresh with:
+
+```bash
+python3 scripts/db_context_snapshot.py --refresh --include-agent-jobs
 ```
 
 ## Process Database Policy
@@ -82,10 +88,16 @@ Every additional process database is collected in shape mode by default. Shape m
 If a task needs full stored procedure and function definitions from every process database, use:
 
 ```bash
-python scripts/db_context_snapshot.py --refresh --collect-all-process-details
+python3 scripts/db_context_snapshot.py --refresh --collect-all-process-details
 ```
 
-A drift report is always produced when more than one process database is supplied. It records whether each process database matches the reference fingerprint and lists missing or extra objects by object kind.
+A drift report is always produced when more than one process database is supplied. Default drift comparison uses the shape fingerprint so full-only details from the reference process database do not create false drift for shape-mode process databases.
+
+## Refresh Cache Reuse
+
+During `--refresh`, the tool first reads lightweight change markers from catalog metadata: table, stored procedure, function, view, and trigger `modify_date` values. If a database's marker fingerprint matches the cached snapshot and the collection scope is unchanged, the tool reuses that database's cached detail instead of collecting the full table/index/routine metadata again.
+
+This still requires a database connection because the tool must verify whether objects changed. It reduces repeated transfer of large stored procedure, function, view, and trigger definitions when the database shape has not changed.
 
 ## Read-only Boundaries
 
@@ -129,6 +141,8 @@ The repository ignores:
 .db-context/
 *.db-context.json
 *.db-context.md
+routines.sql
+jobs.md
 ```
 
 Agents must not ask to commit `.db-context/` unless a human explicitly reviews and approves the contents.
@@ -143,7 +157,7 @@ The expected sequence is:
 1. Read .db-context/latest.json when DB shape, SP/function logic, SQL Agent jobs, writer behavior, migration risk, MERGE keys, idempotency, or restart-safety matters.
 2. Use routines.index.json to locate relevant stored procedures, functions, and views.
 3. Use routines.sql for exact SQL control-flow review.
-4. Use jobs.md when SQL Agent schedules or job steps matter.
+4. Use jobs.md when SQL Agent schedules or job steps matter and the snapshot was refreshed with --include-agent-jobs.
 5. Return needs-db-context if the required snapshot is missing or insufficient.
 6. Refresh only when the user explicitly asks for fresh DB context.
 ```
@@ -162,7 +176,7 @@ The fourth risk is turning the tool into a general SQL runner. The mitigation is
 
 The fifth risk is huge snapshots. The mitigation is reference-only process collection by default and `--max-definition-chars` truncation for long SQL definitions or job commands.
 
-The sixth risk is stale data. The mitigation is explicit generated timestamps and a workflow rule: if the snapshot is stale or insufficient for the task, return `needs-db-context` instead of guessing.
+The sixth risk is stale data. The mitigation is explicit generated timestamps, refresh-time `modify_date` marker checks, and a workflow rule: if the snapshot is stale or insufficient for the task, return `needs-db-context` instead of guessing.
 
 ## Implementation Plan
 
@@ -170,7 +184,7 @@ The implementation is intentionally small and separated into documentation, tool
 
 First, add this design document so future agents know the expected behavior, threat model, and process database policy.
 
-Second, add `scripts/db_context_snapshot.py`. It provides cache-first reads, explicit `--refresh`, one master database, many process databases, process fingerprint comparison, JSON and Markdown output, routine SQL extraction, SQL Agent job extraction, and best-effort redaction.
+Second, add `scripts/db_context_snapshot.py`. It provides cache-first reads, explicit `--refresh`, refresh-time change marker cache reuse, one master database, many process databases, process fingerprint comparison, JSON and Markdown output, routine SQL extraction, SQL Agent job extraction, and best-effort redaction.
 
 Third, add `.gitignore` entries for `.db-context/` and standalone DB context artifacts.
 

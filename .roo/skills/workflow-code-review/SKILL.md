@@ -21,9 +21,9 @@ If the task cannot proceed because planning context is missing, stale, placehold
 
 When the review depends on actual MSSQL schema, table/column names, indexes, foreign keys, stored procedures, functions, views, triggers, SQL Agent jobs, writer behavior, MERGE keys, idempotency, or restart-safety, read `.db-context/latest.json` before making findings.
 
-Use `.db-context/routines.index.json` to locate stored procedures, functions, and views. Use `.db-context/routines.sql` for exact SQL control-flow review. Use `.db-context/jobs.md` when SQL Agent jobs or schedules affect the reviewed behavior.
+Use `.db-context/routines.index.json` to locate stored procedures, functions, and views. Use `.db-context/routines.sql` for exact SQL control-flow review. Use `.db-context/jobs.md` when SQL Agent jobs or schedules affect the reviewed behavior and the snapshot was refreshed with `--include-agent-jobs`.
 
-Do not connect to the database by default. If `.db-context/` exists, use it as the source of truth. Only run `python scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
+Do not connect to the database by default. If `.db-context/` exists, use it as the source of truth. Review mode does not own command execution; when fresh DB context is explicitly required, return `needs-db-context` so a command-capable mode or human can run `python3 scripts/db_context_snapshot.py --refresh`.
 
 If DB context is required but missing, stale, or insufficient, return `needs-db-context` instead of guessing or refreshing automatically.
 
@@ -75,4 +75,4 @@ The expected database model is one master database and many process databases. P
 - Do not rewrite code unless explicitly asked.
 - If no findings exist, state residual risks and test gaps.
 - Do not expand the task into feature implementation or sample project construction.
-- Do not refresh DB context unless the user explicitly asks for a refresh.
+- Do not refresh DB context from review mode; return `needs-db-context` when a command-capable refresh is required.

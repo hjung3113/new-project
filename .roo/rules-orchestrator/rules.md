@@ -89,7 +89,7 @@ return_required:
 ### Required Subtask Result
 
 ```text
-status: <done|blocked|needs-plan|needs-review|failed>
+status: <done|blocked|needs-plan|needs-db-context|needs-review|failed>
 changed_files:
   - <path-or-none>
 evidence:
