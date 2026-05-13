@@ -1,4 +1,5 @@
 .db-context/
+.superpowers/
 *.db-context.json
 *.db-context.md
 routines.sql
