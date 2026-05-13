@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
 status: Phase 1 implemented - Korean README now documents full zero-to-done workflow
-last_updated: "2026-05-11T17:20:00.000Z"
+last_updated: "2026-05-13T14:27:26.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -46,7 +46,6 @@ progress:
 
 ### Outstanding open questions
 
-- Whether Phase 2 should use pre-commit only, CI only, or both.
 - Whether `allowed_paths` should support globs, path prefixes, or exact paths only in the first mechanical checker.
 - Whether template adoption docs should live in README or a dedicated docs file.
 
@@ -88,4 +87,4 @@ Files of record:
 
 ## Next Action
 
-Start Phase 2 only after choosing enforcement scope. Recommended first action: create `02-CONTEXT.md` describing desired pre-commit and CI behavior, then write `02-01-PLAN.md` with allowed paths and verification commands.
+Enforcement scope decision is now captured in `.scratch/phase-2-gates/issues/01-enforcement-channel.md` (both pre-commit and CI). Recommended next action: resolve `allowed_paths` semantics, then create `02-CONTEXT.md` and `02-01-PLAN.md`.
