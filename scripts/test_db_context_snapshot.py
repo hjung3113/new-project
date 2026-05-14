@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import tempfile
 import unittest
@@ -16,6 +17,230 @@ import db_context_snapshot as snap
 
 
 class DbContextSnapshotTests(unittest.TestCase):
+    def test_config_loading_uses_cli_json_env_file_then_environment_without_mutating_environment(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp = Path(tmpdir)
+            env_file = tmp / ".env"
+            env_file.write_bytes(
+                "\ufeff# comment\r\n"
+                'DB_CONTEXT_MASTER_CONNECTION="env-file-master"\r\n'
+                "DB_CONTEXT_PROCESS_CONNECTIONS='{\"env-file\":\"env-file-process\"}'\r\n"
+                "DB_CONTEXT_SNAPSHOT_SCOPE=shape\r\n"
+                "DB_CONTEXT_INCLUDE_TABLES=dbo.EnvFile\r\n"
+                .encode("utf-8")
+            )
+            config_file = tmp / "db-context.config.json"
+            config_file.write_text(
+                json.dumps(
+                    {
+                        "master_connection": "json-master",
+                        "process_connections": {"json-process": "json-process-connection"},
+                        "snapshot_scope": "selected",
+                        "include_tables": ["dbo.Json"],
+                        "include_procedures": "dbo.JsonProc",
+                        "include_jobs": ["Json Job"],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            inherited = {
+                "DB_CONTEXT_MASTER_CONNECTION": "inherited-master",
+                "DB_CONTEXT_PROCESS_CONNECTIONS": '{"inherited":"inherited-process"}',
+                "DB_CONTEXT_INCLUDE_TABLES": "dbo.Inherited",
+            }
+
+            args = snap.parse_args(
+                [
+                    "--config",
+                    str(config_file),
+                    "--env-file",
+                    str(env_file),
+                    "--master-connection",
+                    "cli-master",
+                    "--process-connection",
+                    "cli-process::cli-process-connection",
+                    "--include-procedures",
+                    "dbo.CliProc",
+                ]
+            )
+            effective = snap.resolve_config(args, environ=inherited)
+
+        self.assertEqual("cli-master", effective.master_connection)
+        self.assertEqual([("cli-process", "cli-process-connection")], snap.parse_process_connections(effective.process_connection))
+        self.assertEqual("selected", effective.snapshot_scope)
+        self.assertEqual(["dbo.Json"], effective.include_tables)
+        self.assertEqual(["dbo.CliProc"], effective.include_procedures)
+        self.assertEqual(["Json Job"], effective.include_jobs)
+        self.assertEqual("inherited-master", inherited["DB_CONTEXT_MASTER_CONNECTION"])
+        self.assertNotIn("DB_CONTEXT_SNAPSHOT_SCOPE", inherited)
+
+    def test_config_loading_understands_env_file_comments_crlf_quotes_and_bom(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env_file = Path(tmpdir) / ".env"
+            env_file.write_bytes(
+                b"\xef\xbb\xbf# ignored\r\n"
+                b"DB_CONTEXT_MASTER_CONNECTION='quoted master'\r\n"
+                b'DB_CONTEXT_PROCESS_CONNECTIONS="process-a::quoted process"\r\n'
+                b"DB_CONTEXT_INCLUDE_TABLES=dbo.Orders,dbo.Customers # inline comment\r\n"
+            )
+
+            args = snap.parse_args(["--env-file", str(env_file)])
+            effective = snap.resolve_config(args, environ={})
+
+        self.assertEqual("quoted master", effective.master_connection)
+        self.assertEqual([("process-a", "quoted process")], snap.parse_process_connections(effective.process_connection))
+        self.assertEqual(["dbo.Orders", "dbo.Customers"], effective.include_tables)
+
+    def test_collect_all_process_details_environment_key_sets_reference_only_false(self) -> None:
+        args = snap.parse_args([])
+
+        effective = snap.resolve_config(args, environ={"DB_CONTEXT_COLLECT_ALL_PROCESS_DETAILS": "true"})
+
+        self.assertFalse(effective.process_reference_only)
+
+    def test_default_process_reference_only_remains_true(self) -> None:
+        effective = snap.resolve_config(snap.parse_args([]), environ={})
+
+        self.assertTrue(effective.process_reference_only)
+
+    def test_default_cache_mode_does_not_require_config_or_connect(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            cached = {
+                "tool_version": snap.TOOL_VERSION,
+                "generated_at_utc": "2026-05-14T00:00:00+00:00",
+                "mode": "refresh",
+                "model": {},
+                "safety_notes": [],
+            }
+            (output_dir / snap.LATEST_JSON).write_text(json.dumps(cached), encoding="utf-8")
+
+            with mock.patch.object(snap, "connect", side_effect=AssertionError("must not connect")):
+                result = snap.main(["--output-dir", str(output_dir), "--format", "json"])
+
+        self.assertEqual(0, result)
+
+    def test_offline_selected_snapshot_filters_cached_report_without_connecting(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_dir = Path(tmpdir)
+            report = {
+                "tool_version": snap.TOOL_VERSION,
+                "generated_at_utc": "2026-05-14T00:00:00+00:00",
+                "mode": "refresh",
+                "model": {},
+                "safety_notes": [],
+                "master_database": self.database(
+                    "master",
+                    "full",
+                    modules={
+                        "procedures": [
+                            {"schema_name": "dbo", "object_name": "KeepProc", "type": "P"},
+                            {"schema_name": "dbo", "object_name": "DropProc", "type": "P"},
+                        ],
+                        "functions": [],
+                        "views": [],
+                    },
+                ),
+                "process_databases": [],
+                "agent_jobs": {
+                    "steps": [{"job_name": "KeepJob"}, {"job_name": "DropJob"}],
+                    "schedules": [{"job_name": "KeepJob"}, {"job_name": "DropJob"}],
+                    "warnings": [],
+                },
+            }
+            report["master_database"]["tables"].append({"schema_name": "dbo", "table_name": "Drop", "temporal_type_desc": "NON_TEMPORAL_TABLE"})
+            report["master_database"]["columns"].append({"schema_name": "dbo", "table_name": "Drop", "column_id": 1, "column_name": "Id"})
+            (output_dir / snap.LATEST_JSON).write_text(json.dumps(report), encoding="utf-8")
+
+            args = snap.resolve_config(
+                snap.parse_args(
+                    [
+                        "--offline",
+                        "--output-dir",
+                        str(output_dir),
+                        "--snapshot-scope",
+                        "selected",
+                        "--include-tables",
+                        "dbo.Orders",
+                        "--include-procedures",
+                        "dbo.KeepProc",
+                        "--include-jobs",
+                        "KeepJob",
+                    ]
+                ),
+                environ={},
+            )
+            with mock.patch.object(snap, "connect", side_effect=AssertionError("must not connect")):
+                selected = snap.load_cached_report(Path(args.output_dir), args=args)
+
+        self.assertEqual("cache", selected["mode"])
+        self.assertEqual("selected", selected["collection_options"]["snapshot_scope"])
+        self.assertEqual(["Orders"], [row["table_name"] for row in selected["master_database"]["tables"]])
+        self.assertEqual(["KeepProc"], [row["object_name"] for row in selected["master_database"]["modules"]["procedures"]])
+        self.assertEqual(["KeepJob"], [row["job_name"] for row in selected["agent_jobs"]["steps"]])
+
+    def test_selected_snapshot_filters_collected_metadata_and_records_selection_options(self) -> None:
+        database = self.database(
+            "reference",
+            "selected",
+            modules={
+                "procedures": [
+                    {"schema_name": "dbo", "object_name": "WantedProc", "type": "P"},
+                    {"schema_name": "dbo", "object_name": "OtherProc", "type": "P"},
+                ],
+                "functions": [],
+                "views": [],
+            },
+            triggers=[
+                {"parent_schema": "dbo", "parent_name": "Orders", "trigger_name": "tr_Wanted"},
+                {"parent_schema": "dbo", "parent_name": "Other", "trigger_name": "tr_Other"},
+            ],
+        )
+        database["tables"].append({"schema_name": "dbo", "table_name": "Other", "temporal_type_desc": "NON_TEMPORAL_TABLE"})
+        database["columns"].append({"schema_name": "dbo", "table_name": "Other", "column_id": 1, "column_name": "Id"})
+        database["primary_keys"].append({"schema_name": "dbo", "table_name": "Other", "constraint_name": "PK_Other"})
+        database["indexes"].append({"schema_name": "dbo", "table_name": "Orders", "index_name": "IX_Orders"})
+        database["indexes"].append({"schema_name": "dbo", "table_name": "Other", "index_name": "IX_Other"})
+        database["parameters"] = [
+            {"schema_name": "dbo", "object_name": "WantedProc", "parameter_name": "@Id"},
+            {"schema_name": "dbo", "object_name": "OtherProc", "parameter_name": "@Id"},
+        ]
+        database["dependencies"] = [
+            {"referencing_schema": "dbo", "referencing_name": "WantedProc", "referenced_schema_name": "dbo", "referenced_entity_name": "Wanted"},
+            {"referencing_schema": "dbo", "referencing_name": "OtherProc", "referenced_schema_name": "dbo", "referenced_entity_name": "Other"},
+        ]
+        args = argparse.Namespace(
+            redact=True,
+            max_definition_chars=300_000,
+            snapshot_scope="selected",
+            include_tables=["dbo.Orders"],
+            include_procedures=["dbo.WantedProc"],
+            include_jobs=["Wanted Job"],
+        )
+
+        selected = snap.apply_selection(database, snap.selection_options(args))
+        jobs = snap.filter_agent_jobs(
+            {
+                "steps": [{"job_name": "Wanted Job"}, {"job_name": "Other Job"}],
+                "schedules": [{"job_name": "Wanted Job"}, {"job_name": "Other Job"}],
+                "warnings": [],
+            },
+            snap.selection_options(args),
+        )
+
+        self.assertEqual(["Orders"], [row["table_name"] for row in selected["tables"]])
+        self.assertEqual(["Orders"], [row["table_name"] for row in selected["columns"]])
+        self.assertEqual(["Orders"], [row["table_name"] for row in selected["primary_keys"]])
+        self.assertEqual(["Orders"], [row["table_name"] for row in selected["indexes"]])
+        self.assertEqual(["WantedProc"], [row["object_name"] for row in selected["modules"]["procedures"]])
+        self.assertEqual(["WantedProc"], [row["object_name"] for row in selected["parameters"]])
+        self.assertEqual(["WantedProc"], [row["referencing_name"] for row in selected["dependencies"]])
+        self.assertEqual(["tr_Wanted"], [row["trigger_name"] for row in selected["triggers"]])
+        self.assertEqual(["Wanted Job"], [row["job_name"] for row in jobs["steps"]])
+        self.assertEqual(["Wanted Job"], [row["job_name"] for row in jobs["schedules"]])
+        self.assertEqual("selected", selected["collection_options"]["snapshot_scope"])
+        self.assertEqual(["dbo.Orders"], selected["collection_options"]["include_tables"])
+
     def test_offline_refresh_is_rejected_before_connecting(self) -> None:
         with mock.patch.object(snap, "connect", side_effect=AssertionError("must not connect")):
             with self.assertRaisesRegex(SystemExit, "--offline cannot be combined with --refresh"):
@@ -64,6 +289,11 @@ class DbContextSnapshotTests(unittest.TestCase):
         self.assertIn(".db-context/", gitignore)
         self.assertIn("routines.sql", gitignore)
         self.assertIn("jobs.md", gitignore)
+        self.assertIn("db-context.config.json", gitignore)
+        self.assertIn("*.db-context.config.json", gitignore)
+        self.assertIn(".env", gitignore)
+        self.assertIn(".env.*", gitignore)
+        self.assertIn("!.env.example", gitignore)
 
     def test_refresh_reuses_cached_database_when_change_markers_match(self) -> None:
         args = argparse.Namespace(redact=True, max_definition_chars=300_000, login_timeout_seconds=15, lock_timeout_ms=5_000)

@@ -1,15 +1,15 @@
 {
-  "phase": "done",
-  "plan_id": "harness-distribution-03-01",
+  "phase": "execute",
+  "plan_id": "harness-sync-doctor-04-01",
   "approved": true,
-  "approved_by": "human",
+  "approved_by": "human-chain-request",
   "approved_at": "2026-05-14T00:00:00Z",
-  "summary": "Add clean skeleton, manifest-based init/upgrade, harness checks, README onboarding, and alignment automation hardening.",
-  "plan_path": ".planning/phases/03-harness-distribution-enforcement/03-01-PLAN.md",
+  "summary": "Resolve issues #17, #18, and #19 through roadmap/state sync checks, Windows-compatible selective DB context snapshot, and harness doctor diagnostics. Docker scope excluded.",
+  "plan_path": ".planning/phases/04-template-consumer-onboarding/04-01-PLAN.md",
   "state_path": ".planning/STATE.md",
-  "checkpoint_path": ".planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md",
-  "current_checkpoint": "CP-03-07",
-  "next_action": "Run harness verification, commit the README onboarding prompt examples, and push main as requested.",
+  "checkpoint_path": ".planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md",
+  "current_checkpoint": "CP-04-06",
+  "next_action": "Commit, push, and open a PR for plan harness-sync-doctor-04-01; merge if GitHub permits without additional human approval.",
   "allowed_paths": [
     "AGENTS.md",
     "README.md",
@@ -17,42 +17,62 @@
     ".roo/",
     ".planning/",
     ".scratch/",
+    ".gitignore",
+    "docs/db-context-snapshot.md",
     "docs/phase-gate-harness.md",
     "harness/",
     "scripts/harness.py",
-    "scripts/test_harness.py"
+    "scripts/test_harness.py",
+    "scripts/db_context_snapshot.py",
+    "scripts/test_db_context_snapshot.py"
   ],
   "blocked_paths": [
     "src/",
-    "tests/"
+    "tests/",
+    "docker-compose.yml",
+    "Dockerfile"
   ],
   "acceptance_criteria": [
-    "A manifest classifies harness-owned, project-owned, managed, and excluded files.",
-    "A clean skeleton initializes project-owned planning files without live harness development history.",
-    "Init installs into a target that is not this git repository and refuses partial overwrites.",
-    "Upgrade preserves project-owned state and reports conflicts for locally modified harness files.",
-    "Check validates JSON, command/mode consistency, clean skeleton contamination, stale phase references, installed targets, and optional changed-path enforcement.",
-    "README documents init, upgrade, check, file ownership, and PR-before-merge verification.",
-    "ADR/init workflows require alignment summaries, phase-local discuss, adversarial review, and low-reasoning question concreteness before phase commitments.",
-    "--auto and --chain semantics are documented with stop conditions and auditable auto_selected entries."
+    "ADR/phase changes have a documented and tested roadmap/state sync invariant.",
+    "Doctor detects roadmap/state drift and reports severity/cause/impact/fix.",
+    "Windows users can run DB snapshot refresh using the same Python loader via .env or ignored JSON config.",
+    "DB context snapshot supports full and selected collection for tables, stored procedures, and jobs without connecting in offline mode.",
+    "Skill and command docs expose the same DB snapshot option vocabulary.",
+    "Secret-bearing DB context config and generated snapshot artifacts remain gitignored.",
+    "Doctor reports include diff-before-mutation guidance and do not mutate files.",
+    "Existing Linux/macOS command paths remain valid."
   ],
   "verification": [
     "python3 -m unittest scripts/test_harness.py",
     "python3 -m unittest scripts/test_db_context_snapshot.py",
-    "python3 -m py_compile scripts/harness.py scripts/test_harness.py",
+    "python3 -m py_compile scripts/harness.py scripts/test_harness.py scripts/db_context_snapshot.py scripts/test_db_context_snapshot.py",
     "python3 scripts/harness.py check",
+    "python3 scripts/harness.py doctor",
     "jq . .roomodes >/dev/null",
-    "npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.json",
-    "npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.example.json",
-    "tmp=\"$(mktemp -d)\"; python3 scripts/harness.py init --target \"$tmp/target\"; python3 scripts/harness.py check --target \"$tmp/target\"; (cd \"$tmp/target\" && python3 scripts/harness.py check)"
+    "python3 -m json.tool .roomodes >/dev/null"
   ],
   "notes": [
-    "Upgrade is run from a newer harness source tree against a target project.",
-    "Installed targets can run local check without a source manifest.",
-    "README now includes workflow-specific prompt examples for existing-project adoption and scoped planning hydration."
+    "Issue #16 is open and related but not the active scope unless command/routing consistency is directly needed.",
+    "Docker-related changes are blocked by user instruction.",
+    "No DB connection is allowed unless DB snapshot refresh is explicit."
   ],
-  "automation_mode": "manual",
-  "auto_selected": [],
+  "automation_mode": "chain",
+  "auto_selected": [
+    {
+      "choice": "phase placement",
+      "selected_value": "Phase 4 Template Consumer Onboarding",
+      "reason": "ROADMAP already reserved Phase 4 for template consumer onboarding, and #17-#19 improve consumer adoption and operation.",
+      "evidence_path": ".planning/ROADMAP.md",
+      "risk_level": "low",
+      "reversible": true,
+      "inside_allowed_paths": true,
+      "stop_conditions_checked": [
+        "No app code required",
+        "No docker changes allowed",
+        "Planning docs are allowed paths"
+      ]
+    }
+  ],
   "updated_at": "2026-05-14T00:00:00.000Z",
   "updated_by": "codex"
 }

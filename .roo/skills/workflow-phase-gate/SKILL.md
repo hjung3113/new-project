@@ -24,9 +24,10 @@ Before doing any work:
 8. Identify `phase`, `plan_id`, `approved`, `state_path`, `plan_path`, `checkpoint_path`, `current_checkpoint`, `allowed_paths`, and `verification`.
 9. For `plan`, `execute`, and `done`, read `state_path`, `plan_path`, and `checkpoint_path` before classifying allowed work. If any pointer is missing or stale, treat the state as incomplete and return to `plan`.
 10. If `.planning/codebase/**` or the active phase document set is missing, placeholder-only, or stale for the current repository, treat the gate as incomplete for existing-repository adoption and return to `plan` to hydrate planning memory.
-11. Identify `automation_mode` from `.scratch/phase-state.json` or the user's command flags. Default to `manual`.
-12. If there is no state file, start in `discuss`.
-13. Do only the work allowed by the current phase and automation mode.
+11. Confirm roadmap/state sync: ROADMAP phase checklist totals and completion count must match STATE frontmatter progress, STATE active phase/checkpoint must match the active roadmap phase, and `.scratch/phase-state.json` must point to the same STATE and checkpoint.
+12. Identify `automation_mode` from `.scratch/phase-state.json` or the user's command flags. Default to `manual`.
+13. If there is no state file, start in `discuss`.
+14. Do only the work allowed by the current phase and automation mode.
 
 ## Phase-Local Lifecycle
 
@@ -249,3 +250,4 @@ next_step: <one concrete next action>
 - Stop before auto-selection if the choice is high-risk, destructive, external, security-sensitive, or not reversible.
 - Stop before chained execute if adversarial review reports an unresolved P1 blocker.
 - Stop if the requested change is outside the approved plan.
+- Stop if ROADMAP, STATE, the active checkpoint file, and `.scratch/phase-state.json` disagree about phase progress or the active checkpoint.

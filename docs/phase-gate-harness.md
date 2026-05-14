@@ -14,6 +14,28 @@ The live state file is a gate, not the full project memory. Fresh sessions must 
 - `current_checkpoint`
 - `next_action`
 
+## Roadmap/State Sync Invariant
+
+The roadmap is the source for phase count and completion. Any ADR, phase plan, or checkpoint update that adds, deletes, inserts, renumbers, completes, or reopens a roadmap phase must update these files together:
+
+- `.planning/ROADMAP.md`
+- `.planning/STATE.md`
+- the active phase `*-CHECKPOINTS.md`
+- `.scratch/phase-state.json`
+
+Keep these fields aligned:
+
+- ROADMAP `## Phases` checklist total -> STATE frontmatter `progress.total_phases`
+- ROADMAP completed checklist items -> STATE frontmatter `progress.completed_phases`
+- ROADMAP completion percentage -> STATE frontmatter `progress.percent`
+- first incomplete ROADMAP phase -> STATE `Current Position` active phase
+- STATE active checkpoint and checkpoint file -> `.scratch/phase-state.json` `current_checkpoint` and `checkpoint_path`
+- `.scratch/phase-state.json` `state_path` -> `.planning/STATE.md`
+
+Run `python3 scripts/harness.py check` before handing off phase or ADR changes. The check is read-only and fails strict on drift.
+
+Run `python3 scripts/harness.py doctor` when a low-reasoning agent needs repair guidance before mutation. Doctor is also read-only, but it reports structured severity, cause, impact, fix, evidence, and diff-before-mutation guidance instead of failing at the first strict check.
+
 The four phases are:
 
 | Phase | Allowed work | Next step |

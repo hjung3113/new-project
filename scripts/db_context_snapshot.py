@@ -27,6 +27,23 @@ DEFAULT_OUTPUT_DIR = ".db-context"
 LATEST_JSON = "latest.json"
 LATEST_MD = "latest.md"
 
+ENV_CONFIG_KEYS: dict[str, str] = {
+    "DB_CONTEXT_MASTER_CONNECTION": "master_connection",
+    "DB_CONTEXT_MASTER_LABEL": "master_label",
+    "DB_CONTEXT_PROCESS_CONNECTIONS": "process_connection",
+    "DB_CONTEXT_SNAPSHOT_SCOPE": "snapshot_scope",
+    "DB_CONTEXT_INCLUDE_TABLES": "include_tables",
+    "DB_CONTEXT_INCLUDE_PROCEDURES": "include_procedures",
+    "DB_CONTEXT_INCLUDE_JOBS": "include_jobs",
+    "DB_CONTEXT_INCLUDE_AGENT_JOBS": "include_agent_jobs",
+    "DB_CONTEXT_COLLECT_ALL_PROCESS_DETAILS": "collect_all_process_details",
+    "DB_CONTEXT_OUTPUT_DIR": "output_dir",
+    "DB_CONTEXT_FORMAT": "format",
+    "DB_CONTEXT_MAX_DEFINITION_CHARS": "max_definition_chars",
+    "DB_CONTEXT_LOGIN_TIMEOUT_SECONDS": "login_timeout_seconds",
+    "DB_CONTEXT_LOCK_TIMEOUT_MS": "lock_timeout_ms",
+}
+
 SECRET_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"(?i)(\b(?:password|pwd)\b\s*=\s*)(?:N?'(?:''|[^'])*'|\"[^\"]*\"|[^;\r\n]+)"), r"\1<redacted>"),
     (re.compile(r"(?i)(\b(?:user\s+id|uid)\b\s*=\s*)(?:N?'(?:''|[^'])*'|\"[^\"]*\"|[^;\r\n]+)"), r"\1<redacted>"),
@@ -100,26 +117,200 @@ def parse_process_connections(cli_values: list[str] | None) -> list[tuple[str, s
     if cli_values:
         values.extend(cli_values)
 
-    env_value = os.getenv("DB_CONTEXT_PROCESS_CONNECTIONS")
-    if env_value:
-        try:
-            decoded = json.loads(env_value)
-        except json.JSONDecodeError:
-            decoded = None
-
-        if isinstance(decoded, dict):
-            values.extend(f"{label}::{connection}" for label, connection in decoded.items())
-        elif isinstance(decoded, list):
-            values.extend(str(item) for item in decoded)
-        else:
-            values.extend(line.strip() for line in env_value.splitlines() if line.strip())
-
     result: list[tuple[str, str]] = []
     for index, raw in enumerate(values, start=1):
         label, connection = parse_labeled_connection(raw, f"process_{index}")
         if connection:
             result.append((label, connection))
     return result
+
+
+def strip_env_comment(value: str) -> str:
+    quote: str | None = None
+    escaped = False
+    for index, char in enumerate(value):
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\" and quote == '"':
+            escaped = True
+            continue
+        if char in {"'", '"'}:
+            quote = None if quote == char else char if quote is None else quote
+            continue
+        if char == "#" and quote is None and (index == 0 or value[index - 1].isspace()):
+            return value[:index].rstrip()
+    return value.strip()
+
+
+def unquote_env_value(value: str) -> str:
+    value = strip_env_comment(value.strip())
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        quote = value[0]
+        value = value[1:-1]
+        if value and value[0] == "\ufeff":
+            value = value[1:]
+        if quote == '"':
+            value = value.replace(r"\"", '"').replace(r"\\", "\\")
+    return value
+
+
+def parse_env_file(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    values: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].lstrip()
+        key, separator, value = line.partition("=")
+        if not separator:
+            continue
+        key = key.strip()
+        if not re.match(r"^[A-Za-z_][A-Za-z0-9_]*$", key):
+            continue
+        values[key] = unquote_env_value(value)
+    return values
+
+
+def load_json_config(path: Path | None) -> dict[str, Any]:
+    if not path:
+        return {}
+    if not path.exists():
+        raise SystemExit(f"Config file not found: {path}")
+    with path.open("r", encoding="utf-8-sig") as handle:
+        loaded = json.load(handle)
+    if not isinstance(loaded, dict):
+        raise SystemExit(f"Config file must contain a JSON object: {path}")
+    return loaded
+
+
+def normalize_process_connection_values(value: Any) -> list[str]:
+    if value in (None, ""):
+        return []
+    if isinstance(value, dict):
+        return [f"{label}::{connection}" for label, connection in value.items()]
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item).strip()]
+    if isinstance(value, str):
+        try:
+            decoded = json.loads(value)
+        except json.JSONDecodeError:
+            decoded = None
+        if isinstance(decoded, (dict, list)):
+            return normalize_process_connection_values(decoded)
+        return [line.strip() for line in value.splitlines() if line.strip()]
+    return [str(value)]
+
+
+def split_csv(value: Any) -> list[str]:
+    if value in (None, ""):
+        return []
+    if isinstance(value, list):
+        items: list[str] = []
+        for item in value:
+            items.extend(split_csv(item))
+        return items
+    return [part.strip() for part in str(value).split(",") if part.strip()]
+
+
+def parse_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in {"1", "true", "yes", "y", "on"}
+
+
+def source_value(source: dict[str, Any], field: str) -> Any:
+    if field in source:
+        return source[field]
+    dashed = field.replace("_", "-")
+    if dashed in source:
+        return source[dashed]
+    if field == "process_connection" and "process_connections" in source:
+        return source["process_connections"]
+    return None
+
+
+def env_source(environ: dict[str, str]) -> dict[str, Any]:
+    return {field: environ[name] for name, field in ENV_CONFIG_KEYS.items() if name in environ}
+
+
+def resolve_config(args: argparse.Namespace, *, environ: dict[str, str] | None = None) -> argparse.Namespace:
+    inherited = env_source(dict(os.environ if environ is None else environ))
+    env_file = env_source(parse_env_file(Path(args.env_file))) if args.env_file else {}
+    json_config = load_json_config(Path(args.config) if args.config else None)
+    resolved = argparse.Namespace(**vars(args))
+    sources: dict[str, str] = {}
+
+    fields = {
+        "output_dir": DEFAULT_OUTPUT_DIR,
+        "master_connection": None,
+        "master_label": "master",
+        "process_connection": [],
+        "snapshot_scope": "full",
+        "include_tables": [],
+        "include_procedures": [],
+        "include_jobs": [],
+        "include_agent_jobs": False,
+        "process_reference_only": True,
+        "format": "markdown",
+        "max_definition_chars": 300_000,
+        "redact": True,
+        "login_timeout_seconds": 15,
+        "lock_timeout_ms": 5_000,
+    }
+    for field, default in fields.items():
+        value = default
+        source_name = "default"
+        for name, source in (("environment", inherited), ("env_file", env_file), ("json_config", json_config)):
+            if field == "process_reference_only":
+                if name == "json_config" and source_value(source, "process_reference_only") is not None:
+                    candidate = {"process_reference_only": source_value(source, "process_reference_only")}
+                elif source_value(source, "collect_all_process_details") is not None:
+                    candidate = {"collect_all_process_details": source_value(source, "collect_all_process_details")}
+                else:
+                    candidate = None
+            else:
+                candidate = source_value(source, field)
+            if candidate is not None:
+                value = candidate
+                source_name = name
+        cli_value = getattr(args, field, None)
+        if cli_value is not None:
+            value = cli_value
+            source_name = "cli"
+
+        if field in {"include_tables", "include_procedures", "include_jobs"}:
+            value = split_csv(value)
+        elif field == "process_connection":
+            value = normalize_process_connection_values(value)
+        elif field in {"include_agent_jobs"}:
+            value = parse_bool(value)
+        elif field == "process_reference_only":
+            if isinstance(value, dict) and "process_reference_only" in value:
+                value = parse_bool(value["process_reference_only"])
+            elif isinstance(value, dict) and "collect_all_process_details" in value:
+                value = not parse_bool(value["collect_all_process_details"])
+            elif source_name not in {"cli", "default"}:
+                value = not parse_bool(value)
+            else:
+                value = bool(value)
+        elif field in {"max_definition_chars", "login_timeout_seconds", "lock_timeout_ms"}:
+            value = int(value)
+        elif field == "snapshot_scope":
+            value = str(value)
+            if value not in {"shape", "selected", "full"}:
+                raise SystemExit("--snapshot-scope must be one of: shape, selected, full")
+        setattr(resolved, field, value)
+        sources[field] = source_name
+
+    if resolved.include_jobs:
+        resolved.include_agent_jobs = True
+        sources["include_agent_jobs"] = "include_jobs"
+    resolved.config_sources = sources
+    return resolved
 
 
 def connect(connection_string: str, *, login_timeout_seconds: int) -> Any:
@@ -398,11 +589,114 @@ def collect_agent_jobs(cursor: Any, *, redact: bool, max_definition_chars: int) 
         return {"steps": [], "schedules": [], "warnings": [f"Could not read SQL Agent metadata from msdb: {type(exc).__name__}: {message}"]}
 
 
-def collection_options(args: argparse.Namespace) -> dict[str, Any]:
+def selection_options(args: argparse.Namespace) -> dict[str, Any]:
     return {
+        "snapshot_scope": getattr(args, "snapshot_scope", "full"),
+        "include_tables": split_csv(getattr(args, "include_tables", [])),
+        "include_procedures": split_csv(getattr(args, "include_procedures", [])),
+        "include_jobs": split_csv(getattr(args, "include_jobs", [])),
+    }
+
+
+def collection_options(args: argparse.Namespace) -> dict[str, Any]:
+    options = {
         "redact": bool(args.redact),
         "max_definition_chars": args.max_definition_chars,
         "redaction_version": 1,
+    }
+    options.update(selection_options(args))
+    options["config_sources"] = getattr(args, "config_sources", {})
+    return options
+
+
+def canonical_name(*parts: Any) -> str:
+    return ".".join(str(part) for part in parts if part not in (None, "")).lower()
+
+
+def selected_names(values: list[str]) -> set[str]:
+    names: set[str] = set()
+    for value in values:
+        lowered = value.lower()
+        names.add(lowered)
+        names.add(lowered.split(".")[-1])
+    return names
+
+
+def row_matches_table(row: dict[str, Any], names: set[str], *, schema_key: str = "schema_name", table_key: str = "table_name") -> bool:
+    if not names:
+        return False
+    schema = row.get(schema_key)
+    table = row.get(table_key)
+    return canonical_name(schema, table) in names or canonical_name(table) in names
+
+
+def row_matches_module(row: dict[str, Any], names: set[str], *, schema_key: str = "schema_name", object_key: str = "object_name") -> bool:
+    if not names:
+        return False
+    schema = row.get(schema_key)
+    object_name = row.get(object_key)
+    return canonical_name(schema, object_name) in names or canonical_name(object_name) in names
+
+
+def apply_selection(database: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]:
+    if options.get("snapshot_scope") != "selected":
+        database["collection_options"] = collection_options_from_existing(database.get("collection_options", {}), options)
+        return database
+
+    table_names = selected_names(split_csv(options.get("include_tables", [])))
+    procedure_names = selected_names(split_csv(options.get("include_procedures", [])))
+    selected = dict(database)
+    selected["tables"] = [row for row in database.get("tables", []) if row_matches_table(row, table_names)]
+    selected["columns"] = [row for row in database.get("columns", []) if row_matches_table(row, table_names)]
+    selected["primary_keys"] = [row for row in database.get("primary_keys", []) if row_matches_table(row, table_names)]
+    selected["foreign_keys"] = [
+        row
+        for row in database.get("foreign_keys", [])
+        if row_matches_table(row, table_names, schema_key="parent_schema", table_key="parent_table")
+        or row_matches_table(row, table_names, schema_key="referenced_schema", table_key="referenced_table")
+    ]
+    selected["indexes"] = [row for row in database.get("indexes", []) if row_matches_table(row, table_names)]
+
+    modules = database.get("modules", {})
+    selected["modules"] = {
+        "procedures": [row for row in modules.get("procedures", []) if row_matches_module(row, procedure_names)],
+        "functions": [],
+        "views": [],
+    }
+    selected["parameters"] = [row for row in database.get("parameters", []) if row_matches_module(row, procedure_names)]
+    selected["dependencies"] = [
+        row
+        for row in database.get("dependencies", [])
+        if row_matches_module(row, procedure_names, schema_key="referencing_schema", object_key="referencing_name")
+        or row_matches_module(row, procedure_names, schema_key="referenced_schema_name", object_key="referenced_entity_name")
+        or row_matches_table(row, table_names, schema_key="referenced_schema_name", table_key="referenced_entity_name")
+    ]
+    selected["triggers"] = [
+        row
+        for row in database.get("triggers", [])
+        if row_matches_table(row, table_names, schema_key="parent_schema", table_key="parent_name")
+    ]
+    selected["collection_scope"] = "selected"
+    selected["collection_options"] = collection_options_from_existing(database.get("collection_options", {}), options)
+    selected["shape_fingerprint"] = schema_fingerprint(selected, scope="shape")
+    selected["schema_fingerprint"] = schema_fingerprint(selected, scope="full")
+    return selected
+
+
+def collection_options_from_existing(existing: dict[str, Any], selection: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(existing)
+    merged.update(selection)
+    return merged
+
+
+def filter_agent_jobs(agent_jobs: dict[str, Any], options: dict[str, Any]) -> dict[str, Any]:
+    if options.get("snapshot_scope") != "selected":
+        return agent_jobs
+    job_names = selected_names(split_csv(options.get("include_jobs", [])))
+    return {
+        "steps": [row for row in agent_jobs.get("steps", []) if canonical_name(row.get("job_name")) in job_names],
+        "schedules": [row for row in agent_jobs.get("schedules", []) if canonical_name(row.get("job_name")) in job_names],
+        "warnings": agent_jobs.get("warnings", []),
     }
 
 
@@ -436,7 +730,7 @@ def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool, 
         identity = collect_database_identity(cursor)
         change_markers = collect_change_markers(cursor)
         options = collection_options(args)
-        collection_scope = "full" if full else "shape"
+        collection_scope = "selected" if getattr(args, "snapshot_scope", "full") == "selected" else "full" if full else "shape"
         if can_reuse_cached_database(cached_database, identity=identity, collection_scope=collection_scope, change_markers=change_markers, options=options):
             reused = dict(cached_database or {})
             reused["identity"] = identity
@@ -475,6 +769,8 @@ def collect_database(target: DbTarget, args: argparse.Namespace, *, full: bool, 
             database["user_defined_types"] = collect_user_defined_types(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars)
             database["sequences"] = collect_sequences(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars)
             database["synonyms"] = collect_synonyms(cursor, redact=args.redact, max_definition_chars=args.max_definition_chars)
+        if collection_scope == "selected":
+            database = apply_selection(database, selection_options(args))
         database["shape_fingerprint"] = schema_fingerprint(database, scope="shape")
         database["schema_fingerprint"] = schema_fingerprint(database, scope="full" if full else "shape")
         return database
@@ -606,12 +902,17 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     process_targets = [DbTarget("process", label, connection) for label, connection in process_connections]
     cached_report = try_load_cached_report(Path(args.output_dir))
 
-    master_database = collect_database(master_target, args, full=True, cached_database=cached_database_by_role_label(cached_report, "master", master_target.label))
+    master_database = collect_database(
+        master_target,
+        args,
+        full=args.snapshot_scope != "shape",
+        cached_database=cached_database_by_role_label(cached_report, "master", master_target.label),
+    )
     process_databases = [
         collect_database(
             target,
             args,
-            full=(index == 0 or not args.process_reference_only),
+            full=(args.snapshot_scope == "selected" or index == 0 or not args.process_reference_only) and args.snapshot_scope != "shape",
             cached_database=cached_database_by_role_label(cached_report, "process", target.label),
         )
         for index, target in enumerate(process_targets)
@@ -637,9 +938,11 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
         "master_database": master_database,
         "process_databases": process_databases,
         "process_database_comparison": compare_process_databases(process_databases),
+        "collection_options": collection_options(args),
+        "config_sources": getattr(args, "config_sources", {}),
     }
     if args.include_agent_jobs:
-        report["agent_jobs"] = collect_master_agent_jobs(master_target, args)
+        report["agent_jobs"] = filter_agent_jobs(collect_master_agent_jobs(master_target, args), selection_options(args))
     report["summary"] = {
         "master": summarize_database(master_database),
         "process": [summarize_database(database) for database in process_databases],
@@ -660,6 +963,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "## Database Model", "",
         f"- Master DB count: {report.get('model', {}).get('master_database_count', 1)}",
         f"- Process DB count: {report.get('model', {}).get('process_database_count', len(report.get('process_databases', [])))}",
+        f"- Snapshot scope: `{report.get('collection_options', {}).get('snapshot_scope', '-')}`",
         "- Process DB policy: many process DBs are expected, and they should share the same schema shape.", "",
     ]
 
@@ -760,13 +1064,38 @@ def split_artifacts(report: dict[str, Any], output_dir: Path) -> None:
         write_text(output_dir / "jobs.md", render_jobs_not_collected_markdown())
 
 
-def load_cached_report(output_dir: Path) -> dict[str, Any]:
+def apply_report_selection(report: dict[str, Any], args: argparse.Namespace) -> dict[str, Any]:
+    if getattr(args, "snapshot_scope", "full") != "selected":
+        return report
+    options = selection_options(args)
+    selected = dict(report)
+    if isinstance(report.get("master_database"), dict):
+        selected["master_database"] = apply_selection(report["master_database"], options)
+    selected["process_databases"] = [
+        apply_selection(database, options) if isinstance(database, dict) else database
+        for database in report.get("process_databases", [])
+    ]
+    if isinstance(report.get("agent_jobs"), dict):
+        selected["agent_jobs"] = filter_agent_jobs(report["agent_jobs"], options)
+    selected["collection_options"] = collection_options_from_existing(report.get("collection_options", {}), options)
+    selected["summary"] = {
+        "master": summarize_database(selected["master_database"]) if isinstance(selected.get("master_database"), dict) else None,
+        "process": [summarize_database(database) for database in selected.get("process_databases", []) if isinstance(database, dict)],
+        "agent_job_step_rows": len(selected.get("agent_jobs", {}).get("steps", [])),
+        "agent_job_schedule_rows": len(selected.get("agent_jobs", {}).get("schedules", [])),
+    }
+    return selected
+
+
+def load_cached_report(output_dir: Path, args: argparse.Namespace | None = None) -> dict[str, Any]:
     path = output_dir / LATEST_JSON
     if not path.exists():
         raise SystemExit(f"No cached DB context snapshot found at {path}. Run with --refresh after explicit user approval.")
     with path.open("r", encoding="utf-8") as handle:
         report = json.load(handle)
     report["mode"] = "cache"
+    if args is not None:
+        report = apply_report_selection(report, args)
     return report
 
 
@@ -774,28 +1103,34 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Cache-first read-only MSSQL context snapshotter.")
     parser.add_argument("--refresh", action="store_true", help="Explicitly connect to DBs and refresh .db-context snapshots.")
     parser.add_argument("--offline", action="store_true", help="Require cached snapshot and fail instead of connecting. This is the default unless --refresh is set.")
-    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR, help="Snapshot output directory.")
-    parser.add_argument("--master-connection", default=os.getenv("DB_CONTEXT_MASTER_CONNECTION"), help="Master DB ODBC connection string. Env: DB_CONTEXT_MASTER_CONNECTION")
-    parser.add_argument("--master-label", default="master", help="Label for the master DB section.")
+    parser.add_argument("--config", help="Optional JSON config file. CLI values override config values.")
+    parser.add_argument("--env-file", help="Optional .env file. JSON config values override .env values.")
+    parser.add_argument("--output-dir", help="Snapshot output directory.")
+    parser.add_argument("--master-connection", help="Master DB ODBC connection string. Env: DB_CONTEXT_MASTER_CONNECTION")
+    parser.add_argument("--master-label", help="Label for the master DB section.")
     parser.add_argument("--process-connection", action="append", help="Process DB ODBC connection string. Repeat for every process DB. Use `label::connection-string` to name one.")
-    parser.add_argument("--collect-all-process-details", dest="process_reference_only", action="store_false", help="Collect full modules/triggers/types for every process DB. Default collects full detail only for the first process DB and shape fingerprints for the rest.")
-    parser.add_argument("--include-agent-jobs", action="store_true", help="Read SQL Agent job metadata from msdb through the master connection.")
-    parser.add_argument("--format", choices=("json", "markdown"), default="markdown", help="Console output format.")
-    parser.add_argument("--max-definition-chars", type=int, default=300_000, help="Max characters to keep per SQL definition or job command. Use 0 for unlimited.")
+    parser.add_argument("--snapshot-scope", choices=("shape", "selected", "full"), help="Snapshot breadth: shape, selected, or full.")
+    parser.add_argument("--include-tables", help="Comma-separated table names for --snapshot-scope selected.")
+    parser.add_argument("--include-procedures", help="Comma-separated stored procedure names for --snapshot-scope selected.")
+    parser.add_argument("--include-jobs", help="Comma-separated SQL Agent job names for --snapshot-scope selected.")
+    parser.add_argument("--collect-all-process-details", dest="process_reference_only", action="store_false", default=None, help="Collect full modules/triggers/types for every process DB. Default collects full detail only for the first process DB and shape fingerprints for the rest.")
+    parser.add_argument("--include-agent-jobs", action="store_true", default=None, help="Read SQL Agent job metadata from msdb through the master connection.")
+    parser.add_argument("--format", choices=("json", "markdown"), help="Console output format.")
+    parser.add_argument("--max-definition-chars", type=int, help="Max characters to keep per SQL definition or job command. Use 0 for unlimited.")
     parser.add_argument("--no-redact", dest="redact", action="store_false", help="Disable best-effort secret redaction for definitions and job commands.")
-    parser.add_argument("--login-timeout-seconds", type=int, default=15, help="ODBC login timeout.")
-    parser.add_argument("--lock-timeout-ms", type=int, default=5_000, help="SQL Server lock timeout for catalog reads.")
-    parser.set_defaults(redact=True, process_reference_only=True)
+    parser.add_argument("--login-timeout-seconds", type=int, help="ODBC login timeout.")
+    parser.add_argument("--lock-timeout-ms", type=int, help="SQL Server lock timeout for catalog reads.")
+    parser.set_defaults(redact=None)
     return parser.parse_args(list(argv))
 
 
 def main(argv: Iterable[str] = sys.argv[1:]) -> int:
-    args = parse_args(argv)
+    args = resolve_config(parse_args(argv))
     if args.refresh and args.offline:
         raise SystemExit("--offline cannot be combined with --refresh.")
     output_dir = Path(args.output_dir)
     if not args.refresh:
-        report = load_cached_report(output_dir)
+        report = load_cached_report(output_dir, args=args)
     else:
         report = build_report(args)
         output_dir.mkdir(parents=True, exist_ok=True)

@@ -43,6 +43,7 @@
 python3 scripts/harness.py init --target /path/to/project
 python3 scripts/harness.py upgrade --target /path/to/project
 python3 scripts/harness.py check
+python3 scripts/harness.py doctor
 ```
 
 현재 작업 현황을 사람이 빠르게 훑어보려면 정적 HTML 대시보드를 생성합니다.
@@ -57,7 +58,9 @@ python3 scripts/project_dashboard.py
 
 `upgrade`는 새 하네스 소스에서 타겟을 지정해 실행합니다. manifest에서 `harness-owned` 또는 `managed`로 분류된 파일만 갱신하고, `.planning/STATE.md`, `.planning/phases/**`, `.scratch/phase-state.json`처럼 프로젝트 진행 상태가 담기는 파일은 보존합니다. 하네스 소유 파일을 타겟에서 수정한 경우에는 `.harness/conflicts/**/*.new`에 새 버전을 남기고 충돌을 보고합니다.
 
-`check`는 JSON 구문, phase-state automation semantics, Roo command/mode 일치, clean skeleton 오염, stale phase 번호, 선택적 changed-path enforcement를 검증합니다. changed-path 검증은 `phase=execute` 또는 `phase=done`, `approved=true`, `allowed_paths`가 있는 상태에서 사용합니다.
+`check`는 JSON 구문, phase-state automation semantics, Roo command/mode 일치, clean skeleton 오염, stale phase 번호, roadmap/state 동기화, 선택적 changed-path enforcement를 검증합니다. changed-path 검증은 `phase=execute` 또는 `phase=done`, `approved=true`, `allowed_paths`가 있는 상태에서 사용합니다.
+
+`doctor`는 read-only 진단 리포트입니다. 주요 planning 문서, Roo command/mode, DB context 설정, diff-before-mutation 흐름을 점검하고 각 항목을 severity, cause, impact, fix, evidence로 보여줍니다. 수정은 자동 적용하지 않습니다.
 
 파일 소유권은 다음 기준을 따릅니다.
 
@@ -573,12 +576,24 @@ Phase 폴더 기본 패턴:
 
 ```bash
 python3 scripts/harness.py check
+python3 scripts/harness.py doctor
 python3 scripts/harness.py check --worktree
 python3 -m unittest scripts/test_harness.py
 python3 -m py_compile scripts/harness.py scripts/test_harness.py
 jq . .roomodes >/dev/null
 npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.json
 npx --yes ajv-cli validate --spec=draft2020 -s .scratch/phase-state.schema.json -d .scratch/phase-state.example.json
+```
+
+Windows PowerShell에서는 `jq`와 `/dev/null` 대신 Python JSON tooling을 사용할 수 있습니다.
+
+```powershell
+python scripts/harness.py check
+python scripts/harness.py doctor
+python scripts/harness.py check --worktree
+python -m unittest scripts/test_harness.py
+python -m py_compile scripts/harness.py scripts/test_harness.py
+python -m json.tool .roomodes > $null
 ```
 
 README와 실제 Roo 설정이 어긋나는지 확인하려면 command, mode, skill 이름을 함께 검색합니다.
@@ -594,7 +609,20 @@ python3 -m unittest scripts/test_db_context_snapshot.py
 tmp="$(mktemp -d)"
 python3 scripts/harness.py init --target "$tmp/target"
 python3 scripts/harness.py check --target "$tmp/target"
-(cd "$tmp/target" && python3 scripts/harness.py check)
+(cd "$tmp/target" && python3 scripts/harness.py check && python3 scripts/harness.py doctor)
+```
+
+PowerShell 예시:
+
+```powershell
+python -m unittest scripts/test_db_context_snapshot.py
+$tmp = New-Item -ItemType Directory -Path ([System.IO.Path]::Combine([System.IO.Path]::GetTempPath(), [System.Guid]::NewGuid().ToString()))
+python scripts/harness.py init --target "$($tmp.FullName)\target"
+python scripts/harness.py check --target "$($tmp.FullName)\target"
+Push-Location "$($tmp.FullName)\target"
+python scripts/harness.py check
+python scripts/harness.py doctor
+Pop-Location
 ```
 
 현재 상태와 다음 작업은 항상 [.planning/STATE.md](.planning/STATE.md)에서 시작합니다.

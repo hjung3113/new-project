@@ -7,7 +7,7 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 - [x] **Phase 1: Document-Centered Phase Continuity** - Add `.planning/` project memory, phase/checkpoint structure, and gate alignment so fresh sessions can continue without transcript state.
 - [x] **Phase 2: DB Context Snapshot** - Add cache-first MSSQL metadata snapshot tooling and teach Roo workflows to use real DB shape without repeated database connections.
 - [x] **Phase 3: Mechanical Gate Enforcement** - Add local checks that validate phase state, changed paths, clean skeleton contamination, and harness distribution state.
-- [ ] **Phase 4: Template Consumer Onboarding** - Add deeper bootstrap instructions and managed-block merge behavior for target projects.
+- [ ] **Phase 4: Template Consumer Onboarding** - Add deeper bootstrap support through roadmap/state sync checks, Windows-compatible DB context selection, and a document/Roo environment doctor.
 - [ ] **Phase 5: Example ETL Slice** - Add a minimal sample phase plan for a real parser or writer change, proving the harness works end to end.
 
 ## Phase Details
@@ -60,17 +60,19 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 
 ### Phase 4: Template Consumer Onboarding
 
-**Goal**: Make a new project team able to adopt the harness without reading every rule file.
+**Goal**: Make a new project team able to adopt and operate the harness without hidden roadmap/state drift, OS-specific DB snapshot setup, or manual document/Roo mismatch hunting.
 
 **Depends on**: Phase 1.
 
 **Success Criteria**:
 
-1. README or docs include a bootstrap checklist.
-2. The checklist explains how to replace project placeholders, create initial `.planning/` docs, and start a first phase.
-3. The checklist identifies which files are template internals and which are target-project memory.
+1. ADR-driven roadmap phase changes keep `.planning/ROADMAP.md`, `.planning/STATE.md`, active checkpoints, and `.scratch/phase-state.json` aligned.
+2. DB context snapshot refresh supports Windows, Linux, and macOS through Python config loading from CLI, ignored JSON config, `.env`, or inherited environment.
+3. DB context snapshot refresh distinguishes `shape`, `selected`, and `full` scopes, including selected tables, stored procedures, and SQL Agent jobs.
+4. `scripts/harness.py doctor` detects document/Roo environment mismatch and reports severity, cause, impact, fix, and diff-before-mutation guidance.
+5. README and Roo command/skill docs expose consistent DB snapshot and doctor usage.
 
-**Plans**: TBD.
+**Plans**: 1 plan.
 
 ### Phase 5: Example ETL Slice
 
@@ -93,7 +95,7 @@ Granularity: standard. This roadmap is intentionally document-centered: each pha
 | 1. Document-Centered Phase Continuity | 1/1 | Implemented | 2026-05-11 |
 | 2. DB Context Snapshot | 1/1 | Implemented | 2026-05-13 |
 | 3. Mechanical Gate Enforcement | 1/1 | Implemented | 2026-05-14 |
-| 4. Template Consumer Onboarding | 0/? | Not started | - |
+| 4. Template Consumer Onboarding | 0/1 | In progress | - |
 | 5. Example ETL Slice | 0/? | Not started | - |
 
 ## Coverage
