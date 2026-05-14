@@ -15,8 +15,8 @@ These commands are the user-facing entry points for the template.
 | `/issues` | `docs-issues` | Convert docs and plans into PRDs, local tracker issues, acceptance criteria, and implementation slices. |
 | `/phase-discuss` | `architect` | Run the phase-gate discuss step only (read-only discovery and alignment). |
 | `/phase-plan` | `architect` | Run the phase-gate plan step only (plan docs, scope, criteria, verification, approval request). |
-| `/phase-execute` | `orchestrator` | Run the phase-gate execute step only (implementation for an already approved plan). |
-| `/fsd-phase` | `architect` | Recommended one-command phase flow; runs discuss -> plan -> execute with `--chain` when gate conditions pass. |
+| `/phase-execute` | `orchestrator` | Verify an approved execute gate and hand off implementation to the owning mode; the orchestrator does not implement inline. |
+| `/fsd-phase` | `orchestrator` | Recommended one-command phase entry; routes discuss -> plan -> execute through the canonical phase gate and subtask handoffs. |
 
 Slash commands stay thin. Use `.roo/rules-orchestrator/rules.md` for exclusive routing and tie breakers; use the workflow skill or owning mode for the actual sequence.
 
@@ -25,12 +25,13 @@ Slash commands stay thin. Use `.roo/rules-orchestrator/rules.md` for exclusive r
 Any workflow that uses the phase gate may receive these prompt flags:
 
 - `--auto`: select recommended low-risk defaults, record auditable `auto_selected` entries, and stop for destructive, external, security-sensitive, irreversible, broad-scope, or ambiguous product-direction choices.
-- `--chain`: run one phase's reviewed `discuss -> plan -> execute` path with recommended defaults only when `.scratch/phase-state.json` is verified or written with `phase=execute`, matching `plan_id`, `approved=true`, `automation_mode=chain`, durable pointers, non-empty `allowed_paths`, non-empty `verification`, and no unresolved P1 adversarial review finding.
+- `--chain`: request one phase's reviewed `discuss -> plan -> execute` path with recommended defaults. The canonical conditions live in `workflow-phase-gate` Automation Flags and Stop Conditions and must not be weakened by command files.
 
-Flags do not skip phase-local `discuss`, alignment summary, adversarial review, plan approval evidence, or verification.
+Flags do not skip phase-local `discuss`, alignment summary, adversarial review, plan approval evidence, execute handoff, or verification.
 
 ## Phase Command Usage
 
 - Manual step-by-step: `/phase-discuss` -> `/phase-plan` -> `/phase-execute`.
-- One-pass automation: run a workflow command with `--chain` to continue the same phase through `discuss -> plan -> execute` when gate conditions are satisfied.
-- `--chain` does not skip gate safety checks; if conditions fail, it must stop before execute.
+- One-pass automation: use `/fsd-phase <phase> --chain` or another phase-gated workflow command with `--chain`.
+- Execute remains subtask-first: the orchestrator verifies the gate, creates the owning-mode handoff packet, and stops if `new_task` is unavailable.
+- `--chain` does not skip gate safety checks; if canonical conditions fail, it must stop before execute.
