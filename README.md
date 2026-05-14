@@ -78,7 +78,7 @@ python3 scripts/project_dashboard.py
 `init`은 깨끗한 project-owned planning skeleton을 타겟에 설치합니다. 기존 파일이 있으면 덮어쓰지 않고 중단합니다.
 설치되는 `AGENTS.md`에는 `Think Before Coding`, `Simplicity First`, `Surgical Changes`, `Goal-Driven Execution` 기본 지침이 포함됩니다.
 
-`upgrade`는 새 하네스 소스에서 타겟을 지정해 실행합니다. manifest에서 `harness-owned` 또는 `managed`로 분류된 파일만 갱신하고, `.planning/STATE.md`, `.planning/phases/**`, `.scratch/phase-state.json`처럼 프로젝트 진행 상태가 담기는 파일은 보존합니다. 하네스 소유 파일을 타겟에서 수정한 경우에는 `.harness/conflicts/**/*.new`에 새 버전을 남기고 충돌을 보고합니다.
+`upgrade`는 새 하네스 소스에서 타겟을 지정해 실행합니다. manifest에서 `harness-owned` 또는 `managed`로 분류된 파일만 갱신하고, `.planning/STATE.md`, `.planning/phases/**`, `.scratch/phase-state.json`처럼 프로젝트 진행 상태가 담기는 파일은 보존합니다. 하네스 소유 파일을 타겟에서 수정한 경우에는 `.harness/conflicts/**/*.new`에 새 버전을 남기고 충돌을 보고합니다. `.harness/installed-manifest.json`이 없는 타겟은 초기화되지 않은 저장소로 보고 upgrade를 거부합니다.
 
 `check`는 JSON 구문, phase-state automation semantics, Roo command/mode 일치, clean skeleton 오염, stale phase 번호, roadmap/state 동기화, 선택적 changed-path enforcement를 검증합니다. changed-path 검증은 `phase=execute` 또는 `phase=done`, `approved=true`, `allowed_paths`가 있는 상태에서 사용합니다.
 
@@ -88,7 +88,7 @@ python3 scripts/project_dashboard.py
 
 | 분류 | 예시 | upgrade 동작 |
 | --- | --- | --- |
-| `harness-owned` | `.roo/**`, `.roomodes`, `.scratch/phase-state.schema.json`, `.scratch/phase-state.example.json`, `scripts/harness.py` | 설치된 hash와 다르면 충돌 보고, 아니면 갱신 |
+| `harness-owned` | `.roo/**`, `.roomodes`, `.scratch/phase-state.schema.json`, `.scratch/phase-state.example.json`, distributed `scripts/*.py` | 설치된 hash와 다르면 충돌 보고, 아니면 갱신 |
 | `managed` | `AGENTS.md`, `README.md` | 정책상 managed-block merge 대상입니다. 현재 구현은 파일 단위 충돌 보고이며, block marker/merge/dry-run/rollback 검증이 추가되기 전까지 자동 block 병합을 수행하지 않습니다. |
 | `project-owned` | `.planning/**`, `.scratch/phase-state.json` | init 때만 생성, upgrade는 보존 |
 | `exclude` | `.git`, `.db-context/**`, generated artifacts | 설치/업그레이드 대상 아님 |
@@ -501,6 +501,37 @@ DB, ETL, review, ops workflow가 실제 MSSQL schema, index, stored procedure, f
 
 ```bash
 python3 scripts/db_context_snapshot.py --refresh
+```
+
+연결과 선택 옵션은 CLI, gitignored JSON config, `.env`, 기존 environment에서 읽을 수 있습니다. 우선순위는 `CLI > JSON config > .env > inherited environment`입니다. 핵심 옵션은 `--config`, `--env-file`, `--master-connection`, 반복 가능한 `--process-connection`, `--snapshot-scope shape|selected|full`, `--include-tables`, `--include-procedures`, `--include-jobs`, `--allow-broad-catalog-read`, `--collect-all-process-details`, `--include-agent-jobs`입니다.
+
+JSON config를 쓰면 긴 connection string과 selection 목록을 shell별 quoting 없이 관리할 수 있습니다.
+
+```bash
+python3 scripts/db_context_snapshot.py --refresh --config db-context.config.json
+```
+
+```powershell
+python scripts/db_context_snapshot.py --refresh --config db-context.config.json
+```
+
+Snapshot scope는 세 단계입니다.
+
+- `--snapshot-scope shape`: table, column, key, index shape 중심의 drift 확인.
+- `--snapshot-scope selected`: 선택한 table, stored procedure, SQL Agent job만 출력에 남김.
+- `--snapshot-scope full`: 기존 full snapshot 동작. 첫 process DB는 상세 reference로 보고, 나머지는 기본적으로 shape 비교를 수행합니다.
+
+selected refresh는 현재 고정 catalog query를 넓게 읽은 뒤 출력만 filtering합니다. 따라서 DB에 연결하는 selected refresh에는 `--allow-broad-catalog-read`가 필요하며, broad catalog metadata 접근이 허용된다는 확인 없이 이 flag를 붙이지 않습니다. 기존 `.db-context/latest.json`에서 offline selected filtering을 하는 경우에는 DB에 연결하지 않습니다.
+
+```bash
+python3 scripts/db_context_snapshot.py \
+  --refresh \
+  --config db-context.config.json \
+  --snapshot-scope selected \
+  --allow-broad-catalog-read \
+  --include-tables dbo.Orders,dbo.Customers \
+  --include-procedures etl.LoadOrders \
+  --include-jobs "Nightly ETL"
 ```
 
 SQL Agent job schedule이나 job step까지 필요하면 `--include-agent-jobs`를 함께 사용합니다.

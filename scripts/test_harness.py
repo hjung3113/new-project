@@ -511,6 +511,24 @@ progress:
         self.assertIn("Manual step-by-step: `/phase-discuss` -> `/phase-plan` -> `/phase-execute`", readme)
         self.assertIn("One-pass automation: `/fsd-phase <phase> --chain`", readme)
 
+    def test_root_readme_documents_pr20_pr21_db_and_upgrade_hardening(self) -> None:
+        readme = (harness.repo_root() / "README.md").read_text(encoding="utf-8")
+
+        for phrase in (
+            "`.harness/installed-manifest.json`",
+            "distributed `scripts/*.py`",
+            "`--config`",
+            "`--env-file`",
+            "`CLI > JSON config > .env > inherited environment`",
+            "`--snapshot-scope shape|selected|full`",
+            "`--include-tables`",
+            "`--include-procedures`",
+            "`--include-jobs`",
+            "`--allow-broad-catalog-read`",
+            "selected refresh",
+        ):
+            self.assertIn(phrase, readme)
+
     def test_init_installs_phase_commands_from_manifest_sources(self) -> None:
         root = harness.repo_root()
         command_paths = [
