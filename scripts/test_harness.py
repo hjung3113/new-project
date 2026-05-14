@@ -503,6 +503,14 @@ progress:
             for phrase in required_phrases[filename]:
                 self.assertIn(phrase, text)
 
+    def test_root_readme_documents_phase_commands(self) -> None:
+        readme = (harness.repo_root() / "README.md").read_text(encoding="utf-8")
+
+        for command in ("/phase-discuss", "/phase-plan", "/phase-execute", "/fsd-phase"):
+            self.assertIn(f"| `{command}` |", readme)
+        self.assertIn("Manual step-by-step: `/phase-discuss` -> `/phase-plan` -> `/phase-execute`", readme)
+        self.assertIn("One-pass automation: `/fsd-phase <phase> --chain`", readme)
+
     def test_init_installs_phase_commands_from_manifest_sources(self) -> None:
         root = harness.repo_root()
         command_paths = [

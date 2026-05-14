@@ -408,8 +408,19 @@ Roo slash command 인자나 task prompt에 아래 플래그를 붙일 수 있습
 | `/adr` | `architect` | `workflow-architecture-decision` | 설계 결정, 경계, 상태 모델, tradeoff, ADR, 구현 계획을 다룹니다. |
 | `/review` | `review` | `workflow-code-review` | 코드, SQL, ETL, 테스트, 성능, 운영 리스크를 read-only로 리뷰합니다. |
 | `/issues` | `docs-issues` | `workflow-docs-to-issues` | 요구사항과 설계 문서를 PRD, issue, acceptance criteria로 쪼갭니다. |
+| `/doctor` | `orchestrator` | `workflow-harness-doctor` | planning, Roo command/mode, DB context 설정, diff-before-mutation readiness를 read-only로 진단합니다. |
+| `/phase-discuss` | `architect` | `workflow-phase-gate` | phase-local discovery, alignment, constraints, open question만 처리합니다. |
+| `/phase-plan` | `architect` | `workflow-phase-gate` | phase plan, scope, acceptance criteria, verification, approval request를 작성합니다. |
+| `/phase-execute` | `orchestrator` | `workflow-phase-gate` | 승인된 execute gate를 검증하고 owning mode로 implementation handoff를 만듭니다. orchestrator는 inline 구현하지 않습니다. |
+| `/fsd-phase` | `orchestrator` | `workflow-phase-gate` | 권장 one-command phase entry입니다. `discuss -> plan -> execute`를 canonical phase gate와 subtask handoff로 라우팅합니다. |
 
 Slash command는 얇은 진입점입니다. 실제 라우팅 판단은 [.roo/rules-orchestrator/rules.md](.roo/rules-orchestrator/rules.md)에 있고, 상세 작업 절차는 [.roo/skills/](.roo/skills/)의 workflow skill에 있습니다.
+
+Phase command 사용:
+
+- Manual step-by-step: `/phase-discuss` -> `/phase-plan` -> `/phase-execute`
+- One-pass automation: `/fsd-phase <phase> --chain`
+- `/phase-execute`와 `/fsd-phase`는 subtask-first 원칙을 유지합니다. `new_task`가 없으면 handoff packet을 출력하고 멈춥니다.
 
 ## Workflow skill 설명
 
@@ -621,7 +632,7 @@ python -m json.tool .roomodes > $null
 README와 실제 Roo 설정이 어긋나는지 확인하려면 command, mode, skill 이름을 함께 검색합니다.
 
 ```bash
-rg -n "workflow-planning-hydration|workflow-simple-task|workflow-feature-tdd|workflow-etl-pipeline|workflow-db-change|workflow-phase-gate|db-context-snapshot|needs-db-context" README.md .roo docs
+rg -n "workflow-planning-hydration|workflow-simple-task|workflow-feature-tdd|workflow-etl-pipeline|workflow-db-change|workflow-phase-gate|workflow-harness-doctor|/phase-discuss|/phase-plan|/phase-execute|/fsd-phase|db-context-snapshot|needs-db-context" README.md .roo docs
 ```
 
 PR 전에는 아래 검증도 함께 실행합니다.
