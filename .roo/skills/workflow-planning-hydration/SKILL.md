@@ -49,6 +49,18 @@ Read in this order:
 
 ## Output Files
 
+### Pass 0 Low-Reasoning Limit
+
+Pass 0 is intentionally narrow. Write or update only:
+
+- `.planning/PROJECT.md`
+- `.planning/STATE.md`
+- `.planning/ROADMAP.md`
+- `.planning/codebase/STRUCTURE.md`
+- `.planning/phases/00-planning-hydration/00-CHECKPOINTS.md`
+
+During Pass 0, record open questions and stop for review. Do not hydrate every codebase note, create a real implementation phase, or mark planning context usable until that review is complete.
+
 Hydrate or create these files when they are missing or placeholder-only:
 
 - `.planning/PROJECT.md`

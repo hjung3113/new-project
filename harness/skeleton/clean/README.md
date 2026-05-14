@@ -7,7 +7,12 @@ This repository has been initialized with the reusable Roo harness.
 1. Read `AGENTS.md`.
 2. Read `.planning/STATE.md`.
 3. Read `.planning/ROADMAP.md`.
-4. Read `.scratch/phase-state.json`.
+4. Read `.planning/codebase/**`.
+5. Read the active phase checkpoint.
+6. Read active phase docs when present.
+7. Read `.scratch/phase-state.json`.
+
+> Fresh target first action: run `/phase-discuss planning-hydration --pass 0` to inventory the repository, update only the pass-0 planning files, record open questions, and stop for review before any implementation.
 
 `AGENTS.md` includes the default Karpathy-Inspired Coding Guidelines from `multica-ai/andrej-karpathy-skills`.
 

@@ -94,6 +94,7 @@ Rules:
 - Write the plan with `plan_id`, `allowed_paths`, acceptance criteria, and verification.
 - Treat the user's `--chain` request as permission to prepare approval state for the generated plan, not as permission to bypass the execute gate.
 - Before implementation, verify or write `.scratch/phase-state.json` with `phase=execute`, the same `plan_id`, `approved=true`, non-empty `allowed_paths`, non-empty `verification`, durable planning pointers, and recorded `automation_mode=chain`.
+- Any `phase=execute` state with `approved=true`, including `automation_mode=manual`, must also record non-empty `approved_by` and `approved_at` provenance.
 - If phase state cannot be updated or verified, stop before implementation.
 - Stop before execute if the plan lacks verification, `allowed_paths`, durable planning pointers, or a concrete first slice.
 - Stop during execute if implementation exceeds the plan, verification fails outside approved scope, or adversarial review finds a P1 blocker.

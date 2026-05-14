@@ -15,7 +15,7 @@ progress:
 
 - **Phase**: 0 - Planning Hydration **DISCUSS**.
 - **Status**: The Roo harness has been initialized. Project-specific planning memory still needs hydration from the actual repository.
-- **Next action**: Inventory this repository and update `.planning/codebase/**`, `.planning/ROADMAP.md`, and the first active phase plan before implementation work begins.
+- **Next action**: Fresh target first action: run `/phase-discuss planning-hydration --pass 0` to inventory this repository, update only `.planning/PROJECT.md`, `.planning/STATE.md`, `.planning/ROADMAP.md`, `.planning/codebase/STRUCTURE.md`, and `.planning/phases/00-planning-hydration/00-CHECKPOINTS.md`, record open questions, and stop for review.
 
 ## Active Checkpoint
 

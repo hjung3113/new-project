@@ -20,6 +20,18 @@ HARNESS_VERSION = "0.3.2"
 MANIFEST_PATH = Path("harness/manifest.json")
 CLEAN_SKELETON = Path("harness/skeleton/clean")
 INSTALL_STATE = Path(".harness/installed-manifest.json")
+REQUIRED_TARGET_PHRASES = {
+    "AGENTS.md": (
+        "Karpathy-Inspired Coding Guidelines",
+        "If `.scratch/phase-state.json` is not `phase=execute` with `approved=true`",
+        "Every roadmap phase starts with its own `discuss` pass",
+    ),
+    "README.md": (
+        "Fresh target first action",
+        "python3 scripts/harness.py check",
+        "project_dashboard.py",
+    ),
+}
 CONTAMINATION_PATTERNS = (
     re.compile(r"\bPR\s*#\d+\b", re.IGNORECASE),
     re.compile(r"\bDB context snapshot\b", re.IGNORECASE),
@@ -153,6 +165,7 @@ def upgrade(*, root: Path, target: Path, dry_run: bool = False, force: bool = Fa
     if installed.get("version") is None:
         raise SystemExit("Target is not initialized. Run init before upgrade.")
     conflicts = 0
+    current_paths = {str(entry.path) for entry in entries if entry.policy != "exclude"}
 
     for entry in entries:
         if entry.policy not in {"harness-owned", "managed"}:
@@ -178,6 +191,24 @@ def upgrade(*, root: Path, target: Path, dry_run: bool = False, force: bool = Fa
                 "policy": entry.policy,
                 "sha256": new_hash,
             }
+
+    for path_text, info in list(installed_paths.items()):
+        if path_text in current_paths:
+            continue
+        if not isinstance(info, dict) or info.get("policy") not in {"harness-owned", "managed"}:
+            continue
+        destination = target / normalize_path(path_text)
+        old_hash = info.get("sha256")
+        if destination.exists() and old_hash and file_hash(destination) != old_hash:
+            conflicts += 1
+            conflict_path = target / ".harness/conflicts" / f"{path_text}.retired"
+            if not dry_run:
+                write_copy(destination, conflict_path)
+            continue
+        if not dry_run:
+            if destination.exists():
+                destination.unlink()
+            installed.setdefault("files", {}).pop(path_text, None)
 
     installed["version"] = HARNESS_VERSION
     if not dry_run:
@@ -218,7 +249,7 @@ def check(*, root: Path, target: Path | None = None, base: str | None = None, wo
 
     check_target = (target or root).resolve()
     if target:
-        check_installed_target(check_target)
+        check_installed_target(check_target, expected_entries=entries)
     if base:
         check_changed_paths(check_target, base)
     if worktree:
@@ -301,7 +332,7 @@ def read_install_state(target: Path) -> dict[str, object]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def check_installed_target(target: Path) -> None:
+def check_installed_target(target: Path, expected_entries: list[ManifestEntry] | None = None) -> None:
     installed_path = target / INSTALL_STATE
     if not installed_path.exists():
         raise SystemExit(f"Target is missing {INSTALL_STATE}")
@@ -315,6 +346,28 @@ def check_installed_target(target: Path) -> None:
             missing.append(path_text)
     if missing:
         raise SystemExit("Installed target is missing files: " + ", ".join(missing))
+    if expected_entries is not None:
+        expected_paths = {str(entry.path) for entry in expected_entries if entry.policy != "exclude"}
+        missing_current = [
+            path_text for path_text in sorted(expected_paths) if not (target / normalize_path(path_text)).exists()
+        ]
+        if missing_current:
+            raise SystemExit("Current harness files missing from target: " + ", ".join(missing_current))
+        retired = [path_text for path_text in sorted(installed.get("files", {})) if path_text not in expected_paths]
+        if retired:
+            raise SystemExit("Retired harness files remain installed: " + ", ".join(retired))
+    missing_phrases = []
+    for relative, phrases in REQUIRED_TARGET_PHRASES.items():
+        path = target / relative
+        if not path.exists():
+            missing_phrases.append(f"{relative}: missing file")
+            continue
+        text = path.read_text(encoding="utf-8")
+        for phrase in phrases:
+            if phrase not in text:
+                missing_phrases.append(f"{relative}: {phrase}")
+    if missing_phrases:
+        raise SystemExit("Required guardrail phrases missing: " + "; ".join(missing_phrases))
     for relative in (
         ".roomodes",
         ".scratch/phase-state.schema.json",
@@ -389,11 +442,20 @@ def check_phase_state_semantics(path: Path) -> None:
             raise SystemExit(f"{path} auto_selected[{index}].risk_level must be low, medium, or high.")
         if not item["stop_conditions_checked"]:
             raise SystemExit(f"{path} auto_selected[{index}].stop_conditions_checked must be non-empty.")
-    if automation_mode == "chain" and state.get("phase") == "execute":
-        if state.get("approved") is not True or not state.get("plan_id"):
-            raise SystemExit(f"{path} chain execute requires approved=true and plan_id.")
-        if not state.get("allowed_paths") or not state.get("verification"):
-            raise SystemExit(f"{path} chain execute requires allowed_paths and verification.")
+    if state.get("phase") == "execute" and state.get("approved") is True:
+        required_execute = (
+            "plan_id",
+            "allowed_paths",
+            "verification",
+            "state_path",
+            "plan_path",
+            "checkpoint_path",
+            "approved_by",
+            "approved_at",
+        )
+        missing = [key for key in required_execute if not state.get(key)]
+        if missing:
+            raise SystemExit(f"{path} execute approval requires {', '.join(missing)}.")
 
 
 def check_command_modes(root: Path) -> None:

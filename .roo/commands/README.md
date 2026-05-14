@@ -2,6 +2,15 @@
 
 These commands are the user-facing entry points for the template.
 
+## Fresh Target First Actions
+
+Before planning hydration finishes, keep the visible command set small:
+
+- `/phase-discuss planning-hydration` for the first repository inventory and alignment pass.
+- `/simple` for one or two known files when there are no application code edits and verification is obvious.
+- `/review` for read-only consistency checks.
+- `/doctor` for read-only harness diagnostics.
+
 | Command | Mode | Purpose |
 | --- | --- | --- |
 | `/simple` | `orchestrator` | Run the lightweight path for focused questions, small low-risk edits, docs tweaks, harmless command runs, mechanical cleanup, and tiny locally verified changes. |

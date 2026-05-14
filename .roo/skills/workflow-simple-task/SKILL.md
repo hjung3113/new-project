@@ -26,6 +26,14 @@ Use this workflow only when all are true:
 
 All other simple task types must still respect owner mode boundaries. If the task edits files, runs commands, changes behavior, or updates harness/planning state, create a subtask in the owning mode.
 
+When no subtask tooling is available, a simple task may proceed without subtask tooling only if all of these are true:
+
+- no application code edits
+- one or two known files
+- verification is obvious and run before reporting completion
+- phase gate and allowed paths are clear
+
+Stop instead of proceeding if any condition is unclear.
 
 - `answer-only`: Answer a focused question, explain a nearby file, locate a setting, or give a short recommendation. No file edits.
 - `docs-only`: Fix typos, stale references, headings, README notes, comments, or harness documentation.

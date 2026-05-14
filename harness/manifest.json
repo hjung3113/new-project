@@ -312,6 +312,31 @@
       "policy": "project-owned"
     },
     {
+      "path": ".planning/phases/00-planning-hydration/00-CONTEXT.md",
+      "source": "harness/skeleton/clean/.planning/phases/00-planning-hydration/00-CONTEXT.md",
+      "policy": "project-owned"
+    },
+    {
+      "path": ".planning/phases/00-planning-hydration/00-01-PLAN.md",
+      "source": "harness/skeleton/clean/.planning/phases/00-planning-hydration/00-01-PLAN.md",
+      "policy": "project-owned"
+    },
+    {
+      "path": ".planning/phases/00-planning-hydration/00-REVIEW.md",
+      "source": "harness/skeleton/clean/.planning/phases/00-planning-hydration/00-REVIEW.md",
+      "policy": "project-owned"
+    },
+    {
+      "path": ".planning/phases/00-planning-hydration/00-VERIFICATION.md",
+      "source": "harness/skeleton/clean/.planning/phases/00-planning-hydration/00-VERIFICATION.md",
+      "policy": "project-owned"
+    },
+    {
+      "path": ".planning/phases/00-planning-hydration/00-01-SUMMARY.md",
+      "source": "harness/skeleton/clean/.planning/phases/00-planning-hydration/00-01-SUMMARY.md",
+      "policy": "project-owned"
+    },
+    {
       "path": "docs/agents/domain.md",
       "source": "docs/agents/domain.md",
       "policy": "harness-owned"
@@ -348,7 +373,7 @@
     },
     {
       "path": "scripts/test_harness.py",
-      "source": "scripts/test_harness.py",
+      "source": "scripts/target_smoke_test.py",
       "policy": "harness-owned"
     },
     {

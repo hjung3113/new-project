@@ -87,6 +87,8 @@ class HarnessToolTests(unittest.TestCase):
                     "current_checkpoint": phase_state_current_checkpoint,
                     "allowed_paths": ["scripts/harness.py"],
                     "verification": ["python3 -m unittest scripts/test_harness.py"],
+                    "approved_by": "test-fixture",
+                    "approved_at": "2026-05-15T00:00:00Z",
                 }
             ),
             encoding="utf-8",
@@ -207,6 +209,55 @@ progress:
             ):
                 self.assertIn(phrase, agents)
             self.assertIn("project_dashboard.py", (target / "README.md").read_text(encoding="utf-8"))
+
+    def test_init_installs_first_action_and_phase_zero_placeholders(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+
+            harness.run(["init", "--target", str(target)])
+
+            readme = (target / "README.md").read_text(encoding="utf-8")
+            state = (target / ".planning/STATE.md").read_text(encoding="utf-8")
+            self.assertIn("Fresh target first action", readme)
+            self.assertIn("Fresh target first action", state)
+            for earlier, later in (
+                ("`AGENTS.md`", "`.planning/STATE.md`"),
+                ("`.planning/STATE.md`", "`.planning/ROADMAP.md`"),
+                ("`.planning/ROADMAP.md`", "`.planning/codebase/**`"),
+                ("`.planning/codebase/**`", "active phase checkpoint"),
+                ("active phase docs", "`.scratch/phase-state.json`"),
+            ):
+                self.assertLess(readme.index(earlier), readme.index(later))
+            for filename in (
+                "00-CONTEXT.md",
+                "00-01-PLAN.md",
+                "00-REVIEW.md",
+                "00-VERIFICATION.md",
+                "00-01-SUMMARY.md",
+            ):
+                text = (target / ".planning/phases/00-planning-hydration" / filename).read_text(encoding="utf-8")
+                self.assertIn("not hydrated yet", text)
+
+    def test_init_installs_target_safe_smoke_test_suite(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = harness.repo_root()
+            target = Path(tmpdir) / "target"
+
+            harness.run(["init", "--target", str(target)])
+
+            self.assertEqual(
+                (root / "scripts/target_smoke_test.py").read_text(encoding="utf-8"),
+                (target / "scripts/test_harness.py").read_text(encoding="utf-8"),
+            )
+            completed = subprocess.run(
+                [sys.executable, "scripts/test_harness.py"],
+                cwd=target,
+                check=False,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self.assertEqual(0, completed.returncode, completed.stdout + completed.stderr)
 
     def test_init_refuses_to_overwrite_existing_project_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -340,6 +391,71 @@ progress:
                 [finding.to_dict() for finding in findings],
             )
 
+    def test_check_target_compares_current_source_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+            harness.run(["init", "--target", str(target)])
+            missing_path = ".roo/commands/phase-plan.md"
+            (target / missing_path).unlink()
+            installed_path = target / ".harness/installed-manifest.json"
+            installed = json.loads(installed_path.read_text(encoding="utf-8"))
+            installed["files"].pop(missing_path)
+            installed_path.write_text(json.dumps(installed), encoding="utf-8")
+
+            with self.assertRaisesRegex(SystemExit, "Current harness files missing"):
+                harness.run(["check", "--target", str(target)])
+
+    def test_check_target_reports_retired_installed_files(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+            harness.run(["init", "--target", str(target)])
+            retired = target / ".roo/commands/retired.md"
+            retired.write_text("retired command", encoding="utf-8")
+            self.add_installed_file(target, ".roo/commands/retired.md", retired)
+
+            with self.assertRaisesRegex(SystemExit, "Retired harness files"):
+                harness.run(["check", "--target", str(target)])
+
+    def test_check_target_reports_stale_managed_guardrails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+            harness.run(["init", "--target", str(target)])
+            (target / "AGENTS.md").write_text("locally shortened agents file", encoding="utf-8")
+            (target / "README.md").write_text("locally shortened readme", encoding="utf-8")
+
+            with self.assertRaisesRegex(SystemExit, "Required guardrail phrases missing"):
+                harness.run(["check", "--target", str(target)])
+
+    def test_upgrade_removes_unmodified_retired_harness_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+            harness.run(["init", "--target", str(target)])
+            retired = target / ".roo/commands/retired.md"
+            retired.write_text("retired command", encoding="utf-8")
+            self.add_installed_file(target, ".roo/commands/retired.md", retired)
+
+            result = harness.run(["upgrade", "--target", str(target)])
+
+            self.assertEqual(0, result)
+            self.assertFalse(retired.exists())
+            installed = json.loads((target / ".harness/installed-manifest.json").read_text(encoding="utf-8"))
+            self.assertNotIn(".roo/commands/retired.md", installed["files"])
+
+    def test_upgrade_reports_modified_retired_harness_file_conflict(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+            harness.run(["init", "--target", str(target)])
+            retired = target / ".roo/commands/retired.md"
+            retired.write_text("installed retired command", encoding="utf-8")
+            self.add_installed_file(target, ".roo/commands/retired.md", retired)
+            retired.write_text("locally edited retired command", encoding="utf-8")
+
+            result = harness.run(["upgrade", "--target", str(target)])
+
+            self.assertEqual(1, result)
+            self.assertEqual("locally edited retired command", retired.read_text(encoding="utf-8"))
+            self.assertTrue((target / ".harness/conflicts/.roo/commands/retired.md.retired").exists())
+
     def test_check_rejects_contaminated_clean_skeleton(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -382,6 +498,75 @@ progress:
 
             with self.assertRaisesRegex(SystemExit, "auto_selected\\[0\\] must be an object"):
                 harness.check_phase_state_semantics(path)
+
+    def test_phase_state_execute_requires_approval_scope_and_provenance_for_manual_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "phase-state.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "phase": "execute",
+                        "approved": True,
+                        "automation_mode": "manual",
+                        "auto_selected": [],
+                        "plan_id": "manual-plan",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(SystemExit, "execute approval requires"):
+                harness.check_phase_state_semantics(path)
+
+    def test_phase_state_execute_accepts_manual_mode_with_scope_and_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "phase-state.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "phase": "execute",
+                        "approved": True,
+                        "automation_mode": "manual",
+                        "auto_selected": [],
+                        "plan_id": "manual-plan",
+                        "allowed_paths": ["scripts/harness.py"],
+                        "verification": ["python3 -m unittest scripts/test_harness.py"],
+                        "state_path": ".planning/STATE.md",
+                        "plan_path": ".planning/phases/04-template-consumer-onboarding/04-01-PLAN.md",
+                        "checkpoint_path": ".planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md",
+                        "approved_by": "user",
+                        "approved_at": "2026-05-15T00:00:00Z",
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            harness.check_phase_state_semantics(path)
+
+    def test_hydration_and_simple_workflows_document_low_reasoning_limits(self) -> None:
+        root = harness.repo_root()
+        commands = (root / ".roo/commands/README.md").read_text(encoding="utf-8")
+        hydration = (root / ".roo/skills/workflow-planning-hydration/SKILL.md").read_text(encoding="utf-8")
+        simple = (root / ".roo/skills/workflow-simple-task/SKILL.md").read_text(encoding="utf-8")
+
+        for phrase in ("/phase-discuss planning-hydration", "/simple", "/review", "/doctor"):
+            self.assertIn(phrase, commands)
+        for phrase in (
+            "Pass 0",
+            "PROJECT.md",
+            "STATE.md",
+            "ROADMAP.md",
+            ".planning/codebase/STRUCTURE.md",
+            "00-CHECKPOINTS.md",
+            "stop for review",
+        ):
+            self.assertIn(phrase, hydration)
+        for phrase in (
+            "one or two known files",
+            "no application code edits",
+            "without subtask tooling",
+        ):
+            self.assertIn(phrase, simple)
 
     def test_phase_commands_are_present_and_manifest_owned(self) -> None:
         root = harness.repo_root()
@@ -546,6 +731,15 @@ progress:
                     (root / path).read_text(encoding="utf-8"),
                     (target / path).read_text(encoding="utf-8"),
                 )
+
+    def add_installed_file(self, target: Path, relative_path: str, path: Path) -> None:
+        installed_path = target / ".harness/installed-manifest.json"
+        installed = json.loads(installed_path.read_text(encoding="utf-8"))
+        installed["files"][relative_path] = {
+            "policy": "harness-owned",
+            "sha256": harness.file_hash(path),
+        }
+        installed_path.write_text(json.dumps(installed), encoding="utf-8")
 
 
 if __name__ == "__main__":
