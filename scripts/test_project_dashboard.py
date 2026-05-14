@@ -57,6 +57,18 @@ progress:
         self.assertEqual("Add bootstrap checklist.", phases[1].summary)
         self.assertFalse(phases[1].completed)
 
+    def test_done_gate_leaves_next_open_phase_in_remaining_column(self) -> None:
+        phases = [
+            project_dashboard.RoadmapPhase("Phase 1: First", "Done.", True, ""),
+            project_dashboard.RoadmapPhase("Phase 2: Second", "Not started.", False, ""),
+        ]
+
+        columns = project_dashboard.group_phases_for_kanban(phases, "done")
+
+        self.assertEqual(["Phase 1: First"], [phase.title for phase in columns["done"]])
+        self.assertEqual([], columns["active"])
+        self.assertEqual(["Phase 2: Second"], [phase.title for phase in columns["remaining"]])
+
     def test_load_dashboard_data_reads_fixture_repository(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -92,6 +104,12 @@ progress:
             self.assertIn("Example Issue", html)
             self.assertIn("Phase Gate Harness", html)
             self.assertIn("python3 scripts/harness.py check", html)
+            self.assertIn("Gate Details", html)
+            self.assertIn("example-01", html)
+            self.assertIn("done", html)
+            self.assertIn("Automation", html)
+            self.assertIn("chain", html)
+            self.assertIn("human-chain-request", html)
 
 
 def write_fixture_repository(root: Path) -> None:
@@ -153,6 +171,8 @@ Open a PR.
                 "phase": "done",
                 "plan_id": "example-01",
                 "approved": True,
+                "approved_by": "human-chain-request",
+                "approved_at": "2026-05-14T00:00:00Z",
                 "state_path": ".planning/STATE.md",
                 "checkpoint_path": ".planning/phases/01-first/01-CHECKPOINTS.md",
                 "current_checkpoint": "CP-01",
@@ -161,6 +181,7 @@ Open a PR.
                 "blocked_paths": ["src/"],
                 "acceptance_criteria": ["Dashboard fixture loads."],
                 "verification": ["python3 scripts/harness.py check"],
+                "automation_mode": "chain",
             }
         ),
         encoding="utf-8",

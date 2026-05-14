@@ -383,6 +383,7 @@ def render_html(data: DashboardData) -> str:
     acceptance = as_string_list(phase_state.get("acceptance_criteria"))
     allowed_paths = as_string_list(phase_state.get("allowed_paths"))
     blocked_paths = as_string_list(phase_state.get("blocked_paths"))
+    notes = as_string_list(phase_state.get("notes"))
 
     return f"""<!doctype html>
 <html lang="en">
@@ -431,10 +432,18 @@ def render_html(data: DashboardData) -> str:
       {render_warnings(data.warnings)}
       <section class="panel">
         <div class="section-heading">
+          <h2>Gate Details</h2>
+          <p>Current discuss/plan/execute/done state and approval metadata from .scratch/phase-state.json</p>
+        </div>
+        {render_gate_details(phase_state)}
+      </section>
+
+      <section class="panel">
+        <div class="section-heading">
           <h2>Roadmap Kanban</h2>
           <p>Done, in-progress, and remaining phases from .planning/ROADMAP.md</p>
         </div>
-        {render_phase_kanban(data.roadmap_phases)}
+        {render_phase_kanban(data.roadmap_phases, gate_phase)}
       </section>
 
       <section class="panel">
@@ -447,6 +456,7 @@ def render_html(data: DashboardData) -> str:
           <div><h3>Verification</h3>{render_code_list(verification)}</div>
           <div><h3>Allowed Paths</h3>{render_code_list(allowed_paths)}</div>
           <div><h3>Blocked Paths</h3>{render_code_list(blocked_paths)}</div>
+          <div><h3>Notes</h3>{render_list(notes)}</div>
         </div>
       </section>
 
@@ -478,6 +488,33 @@ def render_html(data: DashboardData) -> str:
 </body>
 </html>
 """
+
+
+def render_gate_details(phase_state: dict[str, object]) -> str:
+    details = [
+        ("Phase", phase_state.get("phase", "unknown")),
+        ("Plan ID", phase_state.get("plan_id", "unknown")),
+        ("Approved", "true" if phase_state.get("approved") is True else "false"),
+        ("Approved By", phase_state.get("approved_by", "unknown")),
+        ("Approved At", phase_state.get("approved_at", "unknown")),
+        ("Current Checkpoint", phase_state.get("current_checkpoint", "unknown")),
+        ("Automation", phase_state.get("automation_mode", "manual")),
+        ("Plan", phase_state.get("plan_path", "unknown")),
+        ("State", phase_state.get("state_path", "unknown")),
+        ("Checkpoint", phase_state.get("checkpoint_path", "unknown")),
+        ("Next Action", phase_state.get("next_action", "unknown")),
+    ]
+    items = "".join(
+        f"<div><dt>{escape(label)}</dt><dd>{escape(display_value(value))}</dd></div>"
+        for label, value in details
+    )
+    return f'<dl class="detail-grid">{items}</dl>'
+
+
+def display_value(value: object) -> str:
+    if value is None:
+        return "Not set"
+    return str(value)
 
 
 CSS = """
@@ -541,6 +578,9 @@ dd { margin: 4px 0 0; }
 .phase-card h3 { font-size: 16px; }
 .phase-card p { color: var(--muted); font-size: 13px; }
 .grid-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 16px; margin: 0; }
+.detail-grid div { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: var(--soft); min-width: 0; }
+.detail-grid dd { overflow-wrap: anywhere; }
 ul { margin: 0; padding-left: 20px; }
 li + li { margin-top: 6px; }
 code { background: #edf2f7; border: 1px solid #dbe3ec; padding: 2px 5px; border-radius: 4px; font-size: 12px; }
@@ -564,10 +604,10 @@ def render_warnings(warnings: list[str]) -> str:
     return f'<section class="panel warning"><h2>Warnings</h2>{render_list(warnings)}</section>'
 
 
-def render_phase_kanban(phases: list[RoadmapPhase]) -> str:
+def render_phase_kanban(phases: list[RoadmapPhase], gate_phase: str) -> str:
     if not phases:
         return '<p class="muted">No roadmap phases found.</p>'
-    columns = group_phases_for_kanban(phases)
+    columns = group_phases_for_kanban(phases, gate_phase)
     return (
         '<div class="kanban">'
         f'{render_kanban_column("Done", "done", columns["done"])}'
@@ -577,13 +617,14 @@ def render_phase_kanban(phases: list[RoadmapPhase]) -> str:
     )
 
 
-def group_phases_for_kanban(phases: list[RoadmapPhase]) -> dict[str, list[RoadmapPhase]]:
+def group_phases_for_kanban(phases: list[RoadmapPhase], gate_phase: str) -> dict[str, list[RoadmapPhase]]:
     columns: dict[str, list[RoadmapPhase]] = {"done": [], "active": [], "remaining": []}
     first_open_seen = False
+    has_active_gate = gate_phase in {"discuss", "plan", "execute"}
     for phase in phases:
         if phase.completed:
             columns["done"].append(phase)
-        elif not first_open_seen:
+        elif has_active_gate and not first_open_seen:
             columns["active"].append(phase)
             first_open_seen = True
         else:
