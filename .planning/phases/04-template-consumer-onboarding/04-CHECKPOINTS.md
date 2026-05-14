@@ -32,6 +32,6 @@
 
 ## CP-04-06 - Final review, verification, and PR prep complete
 
-- **Status**: Complete except commit/PR.
+- **Status**: Complete; PR #21 open.
 - **Evidence**: Final adversarial review completed; Issue #16 design, implementation, and final risk reviews completed; P1 findings fixed; `04-REVIEW.md`, `04-VERIFICATION.md`, and `04-01-SUMMARY.md` updated.
-- **Restart**: Commit the working tree, push `codex/issue-16-phase-command-routing`, and open a PR separate from PR #15.
+- **Restart**: Review and merge PR #21: https://github.com/hjung3113/new-project/pull/21

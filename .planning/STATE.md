@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
-status: harness sync, DB compatibility, doctor, and phase command routing implementation complete; PR prep in progress
+status: harness sync, DB compatibility, doctor, and phase command routing implementation complete; PR #21 open
 last_updated: "2026-05-14T00:00:00.000Z"
 progress:
   total_phases: 5
@@ -24,14 +24,14 @@ progress:
 
 - **Phase**: 4 - Harness Sync, DB Compatibility, and Doctor **EXECUTE APPROVED**.
 - **Plan**: 04-01 in progress - sync, DB selection, and doctor.
-- **Status**: Implementation, local verification, design/implementation/final risk reviews, and P0/P1 mitigations are complete; commit and PR are next.
+- **Status**: Implementation, local verification, design/implementation/final risk reviews, P0/P1 mitigations, commit, push, and PR creation are complete.
 - **Progress**: Phase 4: 0/1 plan complete; 3/5 phases complete overall.
 
 ## Active Checkpoint
 
 - **Checkpoint**: CP-04-06 - final review, verification, and PR prep.
 - **Checkpoint file**: `.planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md`.
-- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 4 checkpoint file. Issue #16 command distribution/routing and final P1 mitigations are fixed; commit, push, and open PR next.
+- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 4 checkpoint file. Issue #16 command distribution/routing and final P1 mitigations are fixed; PR #21 is open for review/merge.
 
 ## Accumulated Context
 
@@ -108,4 +108,4 @@ Files of record:
 
 ## Next Action
 
-Commit, push, and open a PR for plan `harness-sync-doctor-04-01`; merge if GitHub permits without additional human approval.
+Review and merge PR #21: https://github.com/hjung3113/new-project/pull/21

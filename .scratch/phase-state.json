@@ -9,7 +9,7 @@
   "state_path": ".planning/STATE.md",
   "checkpoint_path": ".planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md",
   "current_checkpoint": "CP-04-06",
-  "next_action": "Commit, push, and open a PR for Issue #16 phase command distribution/routing on branch codex/issue-16-phase-command-routing; do not modify PR #15.",
+  "next_action": "Review and merge PR #21 for Issue #16 phase command distribution/routing; PR #15 was not modified.",
   "allowed_paths": [
     "AGENTS.md",
     "README.md",
@@ -52,7 +52,7 @@
     "python3 -m json.tool .roomodes >/dev/null"
   ],
   "notes": [
-    "Issue #16 command distribution/routing was implemented on a new branch; PR #15 was used as reference only and not modified.",
+    "Issue #16 command distribution/routing was implemented on branch codex/issue-16-phase-command-routing and opened as PR #21; PR #15 was used as reference only and not modified.",
     "Docker-related changes are blocked by user instruction.",
     "No DB connection is allowed unless DB snapshot refresh is explicit."
   ],
