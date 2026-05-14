@@ -36,6 +36,47 @@ class ManifestEntry:
     policy: str
 
 
+@dataclass(frozen=True)
+class RoadmapPhase:
+    number: int
+    title: str
+    completed: bool
+
+
+@dataclass(frozen=True)
+class StateSnapshot:
+    total_phases: int | None
+    completed_phases: int | None
+    percent: int | None
+    active_phase: int | None
+    checkpoint: str | None
+    checkpoint_path: str | None
+
+
+@dataclass(frozen=True)
+class DoctorFinding:
+    severity: str
+    code: str
+    path: str
+    cause: str
+    impact: str
+    fix: str
+    evidence: str
+    connects_to_db: bool = False
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "severity": self.severity,
+            "code": self.code,
+            "path": self.path,
+            "cause": self.cause,
+            "impact": self.impact,
+            "fix": self.fix,
+            "evidence": self.evidence,
+            "connects_to_db": self.connects_to_db,
+        }
+
+
 def repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
 
@@ -58,6 +99,10 @@ def run(argv: list[str] | None = None) -> int:
     check_parser.add_argument("--base", default=None, help="Optional git base ref for changed-path checks.")
     check_parser.add_argument("--worktree", action="store_true", help="Check staged and unstaged paths against allowed_paths.")
 
+    doctor_parser = subparsers.add_parser("doctor", help="Diagnose planning, Roo, and harness environment drift.")
+    doctor_parser.add_argument("--target", type=Path, default=None)
+    doctor_parser.add_argument("--format", choices=("markdown", "json"), default="markdown")
+
     args = parser.parse_args(argv)
     root = repo_root()
 
@@ -68,6 +113,9 @@ def run(argv: list[str] | None = None) -> int:
         return upgrade(root=root, target=args.target, dry_run=args.dry_run, force=args.force)
     if args.command == "check":
         check(root=root, target=args.target, base=args.base, worktree=args.worktree)
+        return 0
+    if args.command == "doctor":
+        doctor(root=(args.target or root).resolve(), output_format=args.format)
         return 0
     raise AssertionError(f"Unhandled command: {args.command}")
 
@@ -168,6 +216,7 @@ def check(*, root: Path, target: Path | None = None, base: str | None = None, wo
     check_phase_state_semantics(root / ".scratch/phase-state.example.json")
     check_command_modes(root)
     check_phase_state_paths(root)
+    check_roadmap_state_sync(root)
     check_phase_reference_drift(root)
 
     check_target = (target or root).resolve()
@@ -282,6 +331,8 @@ def check_installed_target(target: Path) -> None:
         path = target / relative
         if path.exists():
             check_phase_state_semantics(path)
+    if roadmap_state_sync_applicable(target):
+        check_roadmap_state_sync(target)
 
 
 def write_json(path: Path, data: object) -> None:
@@ -388,6 +439,410 @@ def check_phase_state_paths(root: Path) -> None:
             missing.append(f"{key}={value}")
     if missing:
         raise SystemExit("Phase-state paths are missing: " + ", ".join(missing))
+
+
+def doctor(*, root: Path, output_format: str) -> None:
+    sys.stdout.write(render_doctor_report(collect_doctor_findings(root), output_format=output_format))
+
+
+def collect_doctor_findings(root: Path) -> list[DoctorFinding]:
+    findings: list[DoctorFinding] = []
+    findings.extend(roadmap_state_doctor_findings(root))
+    findings.extend(phase_state_path_doctor_findings(root))
+    findings.extend(command_mode_doctor_findings(root))
+    findings.extend(db_context_doctor_findings(root))
+    findings.append(
+        DoctorFinding(
+            severity="P3",
+            code="diff_before_mutation",
+            path="scripts/harness.py",
+            cause="Harness mutation commands can change many files when init or upgrade runs against a target.",
+            impact="A low-reasoning agent may apply changes before the user has reviewed the affected files.",
+            fix="Run dry-run or diagnostic commands first, inspect the diff or conflict report, then mutate only after review.",
+            evidence="Use `python3 scripts/harness.py upgrade --target <path> --dry-run` before upgrade and `git diff` before commit.",
+        )
+    )
+    return sorted(findings, key=lambda item: (item.severity, item.code, item.path, item.cause))
+
+
+def roadmap_state_doctor_findings(root: Path) -> list[DoctorFinding]:
+    return [
+        DoctorFinding(
+            severity="P1",
+            code="roadmap_state_sync",
+            path=".planning/ROADMAP.md",
+            cause=finding,
+            impact="Agents may execute the wrong phase, compute progress incorrectly, or trust stale approval pointers.",
+            fix="Update `.planning/ROADMAP.md`, `.planning/STATE.md`, the active checkpoint, and `.scratch/phase-state.json` together.",
+            evidence=finding,
+        )
+        for finding in find_roadmap_state_sync_findings(root)
+    ]
+
+
+def phase_state_path_doctor_findings(root: Path) -> list[DoctorFinding]:
+    path = root / ".scratch/phase-state.json"
+    if not path.exists():
+        return [
+            DoctorFinding(
+                severity="P1",
+                code="phase_state_missing",
+                path=".scratch/phase-state.json",
+                cause="Live phase gate file is missing.",
+                impact="Implementation workflows cannot prove phase, plan_id, approved state, allowed paths, or verification.",
+                fix="Create `.scratch/phase-state.json` from schema/example and point it at durable `.planning/` files.",
+                evidence="missing file",
+            )
+        ]
+    try:
+        state = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [
+            DoctorFinding(
+                severity="P1",
+                code="phase_state_invalid_json",
+                path=".scratch/phase-state.json",
+                cause=str(exc),
+                impact="Harness checks and workflow gates cannot parse the live phase state.",
+                fix="Repair JSON syntax and validate with `.scratch/phase-state.schema.json`.",
+                evidence=f"line {exc.lineno} column {exc.colno}",
+            )
+        ]
+    findings: list[DoctorFinding] = []
+    for key in ("state_path", "plan_path", "checkpoint_path"):
+        value = state.get(key)
+        if isinstance(value, str) and value and not (root / normalize_path(value)).exists():
+            findings.append(
+                DoctorFinding(
+                    severity="P1",
+                    code="phase_state_pointer_missing",
+                    path=".scratch/phase-state.json",
+                    cause=f"{key} points to missing path {value!r}.",
+                    impact="Fresh sessions may restart from a non-existent plan or checkpoint.",
+                    fix="Update the pointer to an existing durable planning file or restore the missing file.",
+                    evidence=f"{key}={value}",
+                )
+            )
+    return findings
+
+
+def command_mode_doctor_findings(root: Path) -> list[DoctorFinding]:
+    roomodes_path = root / ".roomodes"
+    commands_dir = root / ".roo/commands"
+    if not roomodes_path.exists() or not commands_dir.exists():
+        return []
+    try:
+        modes = json.loads(roomodes_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        return [
+            DoctorFinding(
+                severity="P1",
+                code="roomodes_invalid_json",
+                path=".roomodes",
+                cause=str(exc),
+                impact="Roo cannot reliably load project-local modes.",
+                fix="Repair `.roomodes` JSON and run `jq . .roomodes >/dev/null`.",
+                evidence=f"line {exc.lineno} column {exc.colno}",
+            )
+        ]
+    known = {mode["slug"] for mode in modes.get("customModes", []) if isinstance(mode, dict) and "slug" in mode}
+    findings: list[DoctorFinding] = []
+    for command in commands_dir.glob("*.md"):
+        text = command.read_text(encoding="utf-8")
+        match = re.search(r"^mode:\s*([A-Za-z0-9_-]+)\s*$", text, re.MULTILINE)
+        if match and match.group(1) not in known:
+            relative = str(command.relative_to(root))
+            findings.append(
+                DoctorFinding(
+                    severity="P1",
+                    code="command_unknown_mode",
+                    path=relative,
+                    cause=f"Command references unknown Roo mode {match.group(1)!r}.",
+                    impact="The slash command may route to a mode that Roo cannot start.",
+                    fix="Update the command frontmatter or add the missing mode to `.roomodes`.",
+                    evidence=f"{relative} -> {match.group(1)}",
+                )
+            )
+    return findings
+
+
+def db_context_doctor_findings(root: Path) -> list[DoctorFinding]:
+    findings: list[DoctorFinding] = []
+    gitignore_path = root / ".gitignore"
+    gitignore = gitignore_path.read_text(encoding="utf-8") if gitignore_path.exists() else ""
+    required_patterns = [".db-context/", "db-context.config.json", "*.db-context.config.json", ".env", ".env.*", "!.env.example"]
+    for pattern in required_patterns:
+        if pattern not in gitignore:
+            findings.append(
+                DoctorFinding(
+                    severity="P2",
+                    code="db_context_secret_ignore_missing",
+                    path=".gitignore",
+                    cause=f"Secret-bearing DB context pattern {pattern!r} is not ignored.",
+                    impact="Connection strings or generated DB context artifacts may be committed accidentally.",
+                    fix=f"Add `{pattern}` to `.gitignore`.",
+                    evidence=pattern,
+                )
+            )
+    snapshot_path = root / ".db-context/latest.json"
+    if snapshot_path.exists():
+        try:
+            report = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            findings.append(
+                DoctorFinding(
+                    severity="P2",
+                    code="db_context_snapshot_invalid_json",
+                    path=".db-context/latest.json",
+                    cause=str(exc),
+                    impact="DB-dependent workflows cannot safely read cached database context.",
+                    fix="Refresh the DB context snapshot after explicit user approval or repair the JSON.",
+                    evidence=f"line {exc.lineno} column {exc.colno}",
+                )
+            )
+        else:
+            options = report.get("collection_options", {})
+            if options.get("snapshot_scope") == "selected" and not any(
+                options.get(key) for key in ("include_tables", "include_procedures", "include_jobs")
+            ):
+                findings.append(
+                    DoctorFinding(
+                        severity="P2",
+                        code="db_context_selected_empty",
+                        path=".db-context/latest.json",
+                        cause="Snapshot scope is selected but no selected objects are recorded.",
+                        impact="Agents may believe the snapshot is intentionally narrow while it contains no target object list.",
+                        fix="Refresh with `--snapshot-scope selected` plus `--include-tables`, `--include-procedures`, or `--include-jobs`.",
+                        evidence="collection_options.snapshot_scope=selected",
+                    )
+                )
+            if options.get("include_jobs") and "agent_jobs" not in report:
+                findings.append(
+                    DoctorFinding(
+                        severity="P2",
+                        code="db_context_jobs_requested_not_collected",
+                        path=".db-context/latest.json",
+                        cause="Selected jobs are recorded but SQL Agent job metadata is absent.",
+                        impact="Workflow review may miss job commands or schedules.",
+                        fix="Refresh with `--include-agent-jobs --include-jobs <names>` after explicit user approval.",
+                        evidence="include_jobs present; agent_jobs missing",
+                    )
+                )
+    return findings
+
+
+def render_doctor_report(findings: list[DoctorFinding], *, output_format: str) -> str:
+    if output_format == "json":
+        return json.dumps({"findings": [finding.to_dict() for finding in findings]}, indent=2, sort_keys=True) + "\n"
+    if output_format != "markdown":
+        raise SystemExit("doctor format must be markdown or json")
+    if not findings:
+        return "# Harness Doctor\n\nNo findings.\n"
+    lines = ["# Harness Doctor", ""]
+    for finding in findings:
+        lines.extend(
+            [
+                f"## {finding.severity} {finding.code}",
+                "",
+                f"- Path: `{finding.path}`",
+                f"- Cause: {finding.cause}",
+                f"- Impact: {finding.impact}",
+                f"- Fix: {finding.fix}",
+                f"- Evidence: {finding.evidence}",
+                f"- Connects to DB: `{str(finding.connects_to_db).lower()}`",
+                "",
+            ]
+        )
+    return "\n".join(lines)
+
+
+def check_roadmap_state_sync(root: Path) -> None:
+    findings = find_roadmap_state_sync_findings(root)
+    if findings:
+        raise SystemExit("Roadmap/state sync invariant failed: " + "; ".join(findings))
+
+
+def roadmap_state_sync_applicable(root: Path) -> bool:
+    state_path = root / ".planning/STATE.md"
+    phase_state_path = root / ".scratch/phase-state.json"
+    roadmap_path = root / ".planning/ROADMAP.md"
+    if not state_path.exists() or not roadmap_path.exists() or not phase_state_path.exists():
+        return False
+    state = parse_state_snapshot(state_path.read_text(encoding="utf-8"))
+    phase_state = json.loads(phase_state_path.read_text(encoding="utf-8"))
+    return any(
+        (
+            state.total_phases is not None,
+            state.completed_phases is not None,
+            state.percent is not None,
+            state.active_phase is not None,
+            state.checkpoint is not None,
+            state.checkpoint_path is not None,
+            phase_state.get("state_path") is not None,
+            phase_state.get("checkpoint_path") is not None,
+            phase_state.get("current_checkpoint") is not None,
+        )
+    )
+
+
+def find_roadmap_state_sync_findings(root: Path) -> list[str]:
+    roadmap_path = root / ".planning/ROADMAP.md"
+    state_path = root / ".planning/STATE.md"
+    phase_state_path = root / ".scratch/phase-state.json"
+    findings: list[str] = []
+
+    for path in (roadmap_path, state_path, phase_state_path):
+        if not path.exists():
+            findings.append(f"{path.relative_to(root)} is missing")
+    if findings:
+        return findings
+
+    phases = parse_roadmap_phases(roadmap_path.read_text(encoding="utf-8"))
+    state = parse_state_snapshot(state_path.read_text(encoding="utf-8"))
+    phase_state = json.loads(phase_state_path.read_text(encoding="utf-8"))
+
+    if not phases:
+        findings.append(".planning/ROADMAP.md has no parseable phase checklist under ## Phases")
+        return findings
+
+    total_phases = len(phases)
+    completed_phases = sum(1 for phase in phases if phase.completed)
+    percent = round((completed_phases / total_phases) * 100) if total_phases else 0
+    active_phase = next((phase.number for phase in phases if not phase.completed), None)
+
+    if state.total_phases != total_phases:
+        findings.append(
+            f".planning/STATE.md progress.total_phases={state.total_phases} does not match "
+            f".planning/ROADMAP.md total phases={total_phases}"
+        )
+    if state.completed_phases != completed_phases:
+        findings.append(
+            f".planning/STATE.md progress.completed_phases={state.completed_phases} does not match "
+            f".planning/ROADMAP.md completed phases={completed_phases}"
+        )
+    if state.percent != percent:
+        findings.append(
+            f".planning/STATE.md progress.percent={state.percent} does not match "
+            f".planning/ROADMAP.md derived percent={percent}"
+        )
+    if active_phase is not None and state.active_phase != active_phase:
+        findings.append(
+            f".planning/STATE.md active phase={state.active_phase} does not match "
+            f".planning/ROADMAP.md first incomplete phase={active_phase}"
+        )
+
+    expected_state_path = ".planning/STATE.md"
+    actual_state_path = phase_state.get("state_path")
+    if actual_state_path != expected_state_path:
+        findings.append(f".scratch/phase-state.json state_path={actual_state_path!r} must be {expected_state_path!r}")
+    if state.checkpoint_path and phase_state.get("checkpoint_path") != state.checkpoint_path:
+        findings.append(
+            f".scratch/phase-state.json checkpoint_path={phase_state.get('checkpoint_path')!r} does not match "
+            f".planning/STATE.md checkpoint file={state.checkpoint_path!r}"
+        )
+    if state.checkpoint and phase_state.get("current_checkpoint") != state.checkpoint:
+        findings.append(
+            f".scratch/phase-state.json current_checkpoint={phase_state.get('current_checkpoint')!r} does not match "
+            f".planning/STATE.md checkpoint={state.checkpoint!r}"
+        )
+
+    plan_path = phase_state.get("plan_path")
+    if isinstance(plan_path, str) and state.checkpoint_path:
+        plan_parent = PurePosixPath(normalize_path(plan_path)).parent
+        checkpoint_parent = PurePosixPath(normalize_path(state.checkpoint_path)).parent
+        if plan_parent != checkpoint_parent:
+            findings.append(
+                f".scratch/phase-state.json plan_path={plan_path!r} must point inside active phase folder "
+                f"{str(checkpoint_parent)!r}"
+            )
+
+    return findings
+
+
+def parse_roadmap_phases(text: str) -> list[RoadmapPhase]:
+    section = markdown_section(text, "Phases")
+    phases: list[RoadmapPhase] = []
+    pattern = re.compile(r"^-\s+\[(?P<mark>[ xX])\]\s+\*\*Phase\s+(?P<number>\d+):\s*(?P<title>[^*]+)\*\*")
+    for line in section.splitlines():
+        match = pattern.match(line.strip())
+        if match:
+            phases.append(
+                RoadmapPhase(
+                    number=int(match.group("number")),
+                    title=match.group("title").strip(),
+                    completed=match.group("mark").lower() == "x",
+                )
+            )
+    return phases
+
+
+def parse_state_snapshot(text: str) -> StateSnapshot:
+    frontmatter = parse_frontmatter(text)
+    progress = frontmatter.get("progress", {})
+    checkpoint_match = re.search(r"^-\s+\*\*Checkpoint\*\*:\s*([A-Za-z0-9_-]+)\b", text, re.MULTILINE)
+    checkpoint_path_match = re.search(r"^-\s+\*\*Checkpoint file\*\*:\s*`([^`]+)`", text, re.MULTILINE)
+    active_phase_match = re.search(r"^-\s+\*\*Phase\*\*:\s*(\d+)\b", text, re.MULTILINE)
+    return StateSnapshot(
+        total_phases=int_value(progress.get("total_phases")),
+        completed_phases=int_value(progress.get("completed_phases")),
+        percent=int_value(progress.get("percent")),
+        active_phase=int(active_phase_match.group(1)) if active_phase_match else None,
+        checkpoint=checkpoint_match.group(1) if checkpoint_match else None,
+        checkpoint_path=normalize_path(checkpoint_path_match.group(1)) if checkpoint_path_match else None,
+    )
+
+
+def parse_frontmatter(text: str) -> dict[str, object]:
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
+        return {}
+    data: dict[str, object] = {}
+    current_map: dict[str, object] | None = None
+    for line in lines[1:]:
+        if line.strip() == "---":
+            break
+        if not line.strip():
+            continue
+        if not line.startswith(" ") and line.endswith(":"):
+            current_map = {}
+            data[line[:-1].strip()] = current_map
+            continue
+        if not line.startswith(" "):
+            key, value = split_frontmatter_pair(line)
+            data[key] = value
+            current_map = None
+            continue
+        if current_map is not None:
+            key, value = split_frontmatter_pair(line.strip())
+            current_map[key] = value
+    return data
+
+
+def split_frontmatter_pair(line: str) -> tuple[str, object]:
+    if ":" not in line:
+        return line.strip(), ""
+    key, raw_value = line.split(":", 1)
+    value = raw_value.strip().strip('"')
+    parsed: object = int(value) if re.fullmatch(r"-?\d+", value) else value
+    return key.strip(), parsed
+
+
+def int_value(value: object) -> int | None:
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str) and re.fullmatch(r"-?\d+", value):
+        return int(value)
+    return None
+
+
+def markdown_section(text: str, heading: str) -> str:
+    pattern = re.compile(rf"^##\s+{re.escape(heading)}\s*$", re.MULTILINE)
+    match = pattern.search(text)
+    if not match:
+        return ""
+    next_heading = re.search(r"^##\s+", text[match.end() :], re.MULTILINE)
+    end = match.end() + next_heading.start() if next_heading else len(text)
+    return text[match.end() : end]
 
 
 def check_changed_paths(target: Path, base: str) -> None:

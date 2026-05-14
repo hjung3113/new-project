@@ -13,6 +13,7 @@ These commands are the user-facing entry points for the template.
 | `/adr` | `architect` | Run the architecture workflow for durable design decisions, boundaries, state models, tradeoffs, or implementation planning. |
 | `/review` | `review` | Run the read-only review workflow for code, SQL, ETL, tests, performance, or operations risk. |
 | `/issues` | `docs-issues` | Convert docs and plans into PRDs, local tracker issues, acceptance criteria, and implementation slices. |
+| `/doctor` | `orchestrator` | Run `workflow-harness-doctor` for read-only harness diagnostics covering planning, Roo command/mode, DB context config, and diff-before-mutation readiness. |
 
 Slash commands stay thin. Use `.roo/rules-orchestrator/rules.md` for exclusive routing and tie breakers; use the workflow skill or owning mode for the actual sequence.
 

@@ -64,6 +64,9 @@ If the task cannot proceed because planning context is missing, stale, placehold
    - Write or update an ADR when the decision is durable.
    - Include consequences, ownership, and test strategy.
    - Update `.planning/DECISIONS.md` or the active phase context/checkpoint when the decision affects project state.
+   - If the ADR adds, deletes, inserts, renumbers, completes, or reopens a roadmap phase, update `.planning/ROADMAP.md`, `.planning/STATE.md`, the active phase `*-CHECKPOINTS.md`, and `.scratch/phase-state.json` together.
+   - Keep STATE frontmatter `progress.total_phases`, `progress.completed_phases`, and `progress.percent` derived from the ROADMAP phase checklist.
+   - Keep `.scratch/phase-state.json` `state_path`, `checkpoint_path`, and `current_checkpoint` aligned with the active checkpoint recorded in `.planning/STATE.md`.
    - Update the matching `.planning/codebase/**` note when the decision changes architecture, stack, structure, conventions, testing, integrations, or known concerns.
    - Call out when future work needs xUnit coverage or MSSQL integration coverage.
    - Preserve the alignment summary in the ADR or active phase context when it influenced the decision.

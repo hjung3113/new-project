@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
-status: harness distribution, alignment hardening, and onboarding prompt examples implemented and ready for PR
+status: harness sync, DB compatibility, and doctor implementation complete; PR prep in progress
 last_updated: "2026-05-14T00:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 3
+  total_plans: 4
   completed_plans: 3
   percent: 60
 ---
@@ -18,20 +18,20 @@ progress:
 
 - **Core value**: A reusable Roo Code harness that keeps low-reasoning models inside explicit workflows for C#/.NET ETL projects.
 - **Current milestone**: Milestone 1 - reusable low-reasoning Roo harness.
-- **Current focus**: Phase 3 harness distribution hardening plus ADR/init alignment hardening complete; README onboarding prompt examples added; PR creation and merge remain.
+- **Current focus**: Phase 4 harness sync, DB snapshot compatibility, and doctor implementation for issues #17, #18, and #19.
 
 ## Current Position
 
-- **Phase**: 3 - Harness Distribution and Enforcement **IMPLEMENTED**.
-- **Plan**: 03-01 complete - clean skeleton and harness tooling.
-- **Status**: Manifest, clean skeleton, init/upgrade/check tooling, README updates, adversarial review hardening, and verification evidence are complete.
-- **Progress**: Phase 3: 1/1 plan complete; 3/5 phases complete overall.
+- **Phase**: 4 - Harness Sync, DB Compatibility, and Doctor **EXECUTE APPROVED**.
+- **Plan**: 04-01 in progress - sync, DB selection, and doctor.
+- **Status**: Implementation, local verification, and final adversarial review are complete; commit and PR are next.
+- **Progress**: Phase 4: 0/1 plan complete; 3/5 phases complete overall.
 
 ## Active Checkpoint
 
-- **Checkpoint**: CP-03-07 - README workflow prompt examples added.
-- **Checkpoint file**: `.planning/phases/03-harness-distribution-enforcement/03-CHECKPOINTS.md`.
-- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 3 checkpoint file. Run harness verification if not already current, then PR creation/push is next.
+- **Checkpoint**: CP-04-06 - final review, verification, and PR prep.
+- **Checkpoint file**: `.planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md`.
+- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 4 checkpoint file. Final review P1 findings are fixed; commit, push, and open PR next.
 
 ## Accumulated Context
 
@@ -47,6 +47,7 @@ progress:
 - DB context refresh may reuse cached per-database detail when table/routine/trigger `modify_date` markers, server/database identity, and redaction/truncation options are unchanged.
 - Harness-owned files are distributed through `harness/manifest.json`.
 - Project-owned planning state is initialized from `harness/skeleton/clean/**` and is not overwritten by `upgrade`.
+- Issue #16 remains open and related to command distribution/routing checks, but #17-#19 are the active implementation scope. Docker-related work is explicitly excluded.
 
 ### Outstanding open questions
 
@@ -60,7 +61,7 @@ progress:
 
 ### Blockers
 
-- None active for Phase 1.
+- None active for Phase 4.
 
 ## Session Continuity
 
@@ -98,7 +99,13 @@ Files of record:
 - `.planning/phases/03-harness-distribution-enforcement/03-REVIEW.md`
 - `.planning/phases/03-harness-distribution-enforcement/03-VERIFICATION.md`
 - `.planning/phases/03-harness-distribution-enforcement/03-01-SUMMARY.md`
+- `.planning/phases/04-template-consumer-onboarding/04-CONTEXT.md`
+- `.planning/phases/04-template-consumer-onboarding/04-01-PLAN.md`
+- `.planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md`
+- `.planning/phases/04-template-consumer-onboarding/04-REVIEW.md`
+- `.planning/phases/04-template-consumer-onboarding/04-VERIFICATION.md`
+- `.planning/phases/04-template-consumer-onboarding/04-01-SUMMARY.md`
 
 ## Next Action
 
-After merge, push `main` only if requested; otherwise start the next change from a new phase-local `discuss`.
+Commit, push, and open a PR for plan `harness-sync-doctor-04-01`; merge if GitHub permits without additional human approval.

@@ -49,9 +49,47 @@ The primary files are:
 
 `jobs.md` contains SQL Agent job steps when `--include-agent-jobs` is used. SQL Agent metadata is read from `msdb` through the master connection.
 
-## Inputs
+## Inputs and Config Files
 
-Connection strings must not be committed. They are provided by environment variables or CLI arguments.
+Connection strings must not be committed. They can be provided by CLI arguments, a gitignored JSON config file, a `.env` file, or inherited environment variables. The Python loader is used on every OS; do not require shell `source`, Bash-only exports, or PowerShell profile mutation.
+
+Config precedence is:
+
+```text
+CLI > JSON config > .env > inherited environment
+```
+
+Supported CLI options are:
+
+```text
+--config
+--env-file
+--master-connection
+--master-label
+--process-connection
+--snapshot-scope shape|selected|full
+--include-tables
+--include-procedures
+--include-jobs
+--collect-all-process-details
+--include-agent-jobs
+```
+
+The equivalent `.env` keys are:
+
+```text
+DB_CONTEXT_MASTER_CONNECTION
+DB_CONTEXT_MASTER_LABEL
+DB_CONTEXT_PROCESS_CONNECTIONS
+DB_CONTEXT_SNAPSHOT_SCOPE
+DB_CONTEXT_INCLUDE_TABLES
+DB_CONTEXT_INCLUDE_PROCEDURES
+DB_CONTEXT_INCLUDE_JOBS
+DB_CONTEXT_COLLECT_ALL_PROCESS_DETAILS
+DB_CONTEXT_INCLUDE_AGENT_JOBS
+```
+
+`.env` files may use CRLF line endings, comments, quoted values, and UTF-8 BOM. `DB_CONTEXT_PROCESS_CONNECTIONS` may be JSON or newline-separated `label::connection-string` values.
 
 ```bash
 export DB_CONTEXT_MASTER_CONNECTION="Driver={ODBC Driver 18 for SQL Server};Server=...;Database=MasterDb;..."
@@ -61,7 +99,7 @@ export DB_CONTEXT_PROCESS_CONNECTIONS='{
 }'
 ```
 
-The CLI also accepts repeated process connections:
+The CLI also accepts repeated process connections. Bash example:
 
 ```bash
 python3 scripts/db_context_snapshot.py \
@@ -71,11 +109,79 @@ python3 scripts/db_context_snapshot.py \
   --process-connection "process-b::$PROCESS_B_CONNECTION"
 ```
 
+PowerShell example:
+
+```powershell
+python scripts/db_context_snapshot.py `
+  --refresh `
+  --master-connection $env:DB_CONTEXT_MASTER_CONNECTION `
+  --process-connection "process-a::$env:PROCESS_A_CONNECTION" `
+  --process-connection "process-b::$env:PROCESS_B_CONNECTION"
+```
+
+A gitignored JSON config can be used when command lines would be too long:
+
+```json
+{
+  "master_connection": "Driver={ODBC Driver 18 for SQL Server};Server=...;Database=MasterDb;...",
+  "process_connections": {
+    "process-a": "Driver={ODBC Driver 18 for SQL Server};Server=...;Database=ProcessA;...",
+    "process-b": "Driver={ODBC Driver 18 for SQL Server};Server=...;Database=ProcessB;..."
+  },
+  "snapshot_scope": "selected",
+  "include_tables": ["dbo.Orders", "dbo.Customers"],
+  "include_procedures": ["etl.LoadOrders"],
+  "include_jobs": ["Nightly ETL"]
+}
+```
+
+Run it with:
+
+```bash
+python3 scripts/db_context_snapshot.py --refresh --config db-context.config.json
+```
+
+```powershell
+python scripts/db_context_snapshot.py --refresh --config db-context.config.json
+```
+
 SQL Agent metadata is optional. When job schedules or job steps matter, refresh with:
 
 ```bash
 python3 scripts/db_context_snapshot.py --refresh --include-agent-jobs
 ```
+
+`--include-jobs` is a selected-scope filter and also opts into SQL Agent job collection during `--refresh`.
+
+## Snapshot Scopes
+
+`--snapshot-scope shape` collects table, column, key, and index shape only. Use it for broad drift checks when routine bodies are unnecessary.
+
+`--snapshot-scope selected` collects catalog metadata and filters the output to requested names using already collected rows:
+
+```bash
+python3 scripts/db_context_snapshot.py \
+  --refresh \
+  --config db-context.config.json \
+  --snapshot-scope selected \
+  --include-tables dbo.Orders,dbo.Customers \
+  --include-procedures etl.LoadOrders \
+  --include-jobs "Nightly ETL"
+```
+
+```powershell
+python scripts/db_context_snapshot.py `
+  --refresh `
+  --config db-context.config.json `
+  --snapshot-scope selected `
+  --include-tables dbo.Orders,dbo.Customers `
+  --include-procedures etl.LoadOrders `
+  --include-jobs "Nightly ETL"
+```
+
+`--snapshot-scope full` preserves the existing full snapshot behavior: the master database and first process database include routine details by default, while additional process databases use shape mode unless `--collect-all-process-details` is set.
+
+The report stores `collection_options`, `config_sources`, selected object names, and snapshot scope metadata. Cache reuse is invalidated when those options change.
 
 ## Process Database Policy
 

@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path, PurePosixPath
+from unittest import mock
 
 import sys
 
@@ -17,6 +18,166 @@ import harness
 
 
 class HarnessToolTests(unittest.TestCase):
+    def test_doctor_reports_structured_roadmap_state_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_sync_fixture(root, state_total=4)
+
+            findings = harness.collect_doctor_findings(root)
+
+            sync_findings = [finding for finding in findings if finding.code == "roadmap_state_sync"]
+            self.assertTrue(sync_findings)
+            self.assertEqual("P1", sync_findings[0].severity)
+            self.assertIn("cause", sync_findings[0].to_dict())
+            self.assertIn("impact", sync_findings[0].to_dict())
+            self.assertIn("fix", sync_findings[0].to_dict())
+            self.assertFalse(sync_findings[0].connects_to_db)
+
+    def test_doctor_json_output_is_deterministic_and_read_only(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_sync_fixture(root)
+
+            with mock.patch.object(harness, "subprocess") as subprocess_mock:
+                rendered = harness.render_doctor_report(harness.collect_doctor_findings(root), output_format="json")
+
+            payload = json.loads(rendered)
+            self.assertEqual(["findings"], sorted(payload))
+            self.assertTrue(any(item["code"] == "diff_before_mutation" for item in payload["findings"]))
+            subprocess_mock.assert_not_called()
+
+    def test_doctor_rejects_unknown_output_format(self) -> None:
+        with self.assertRaisesRegex(SystemExit, "doctor format"):
+            harness.render_doctor_report([], output_format="xml")
+
+    def write_sync_fixture(
+        self,
+        root: Path,
+        *,
+        state_total: int = 5,
+        state_completed: int = 3,
+        state_percent: int = 60,
+        state_checkpoint: str = "CP-04-02",
+        phase_state_checkpoint_path: str = ".planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md",
+        phase_state_current_checkpoint: str = "CP-04-02",
+    ) -> None:
+        (root / "harness/skeleton/clean").mkdir(parents=True)
+        (root / "harness").mkdir(exist_ok=True)
+        (root / "harness/manifest.json").write_text(
+            json.dumps({"version": harness.HARNESS_VERSION, "files": []}), encoding="utf-8"
+        )
+        (root / ".roomodes").write_text(json.dumps({"customModes": []}), encoding="utf-8")
+        (root / ".scratch").mkdir()
+        (root / ".scratch/phase-state.schema.json").write_text("{}", encoding="utf-8")
+        (root / ".scratch/phase-state.example.json").write_text(
+            json.dumps({"phase": "discuss", "approved": False, "automation_mode": "manual", "auto_selected": []}),
+            encoding="utf-8",
+        )
+        (root / ".scratch/phase-state.json").write_text(
+            json.dumps(
+                {
+                    "phase": "execute",
+                    "approved": True,
+                    "plan_id": "harness-sync-doctor-04-01",
+                    "automation_mode": "manual",
+                    "auto_selected": [],
+                    "state_path": ".planning/STATE.md",
+                    "plan_path": ".planning/phases/04-template-consumer-onboarding/04-01-PLAN.md",
+                    "checkpoint_path": phase_state_checkpoint_path,
+                    "current_checkpoint": phase_state_current_checkpoint,
+                    "allowed_paths": ["scripts/harness.py"],
+                    "verification": ["python3 -m unittest scripts/test_harness.py"],
+                }
+            ),
+            encoding="utf-8",
+        )
+        phase_dir = root / ".planning/phases/04-template-consumer-onboarding"
+        phase_dir.mkdir(parents=True)
+        (phase_dir / "04-01-PLAN.md").write_text("# Phase 4 Plan\n", encoding="utf-8")
+        (phase_dir / "04-CHECKPOINTS.md").write_text(
+            f"# Phase 4 Checkpoints\n\n## {state_checkpoint} - Review complete\n\n- **Status**: Complete.\n",
+            encoding="utf-8",
+        )
+        (root / ".planning/ROADMAP.md").write_text(
+            """# ROADMAP
+
+## Phases
+
+- [x] **Phase 1: Document-Centered Phase Continuity** - Complete.
+- [x] **Phase 2: DB Context Snapshot** - Complete.
+- [x] **Phase 3: Mechanical Gate Enforcement** - Complete.
+- [ ] **Phase 4: Template Consumer Onboarding** - In progress.
+- [ ] **Phase 5: Example ETL Slice** - Not started.
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+| --- | ---: | --- | --- |
+| 1. Document-Centered Phase Continuity | 1/1 | Implemented | 2026-05-11 |
+| 2. DB Context Snapshot | 1/1 | Implemented | 2026-05-13 |
+| 3. Mechanical Gate Enforcement | 1/1 | Implemented | 2026-05-14 |
+| 4. Template Consumer Onboarding | 0/1 | In progress | - |
+| 5. Example ETL Slice | 0/? | Not started | - |
+""",
+            encoding="utf-8",
+        )
+        (root / ".planning/STATE.md").write_text(
+            f"""---
+progress:
+  total_phases: {state_total}
+  completed_phases: {state_completed}
+  percent: {state_percent}
+---
+
+# STATE
+
+## Current Position
+
+- **Phase**: 4 - Harness Sync, DB Compatibility, and Doctor **EXECUTE APPROVED**.
+- **Progress**: Phase 4: 0/1 plan complete; {state_completed}/{state_total} phases complete overall.
+
+## Active Checkpoint
+
+- **Checkpoint**: {state_checkpoint} - design adversarial review complete.
+- **Checkpoint file**: `.planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md`.
+""",
+            encoding="utf-8",
+        )
+
+    def test_roadmap_state_sync_accepts_matching_progress_and_pointers(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_sync_fixture(root)
+
+            self.assertEqual([], harness.find_roadmap_state_sync_findings(root))
+            harness.check(root=root)
+
+    def test_roadmap_state_sync_reports_state_progress_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_sync_fixture(root, state_total=4, state_completed=2, state_percent=50)
+
+            findings = harness.find_roadmap_state_sync_findings(root)
+
+            self.assertTrue(any("progress.total_phases" in finding for finding in findings))
+            self.assertTrue(any("progress.completed_phases" in finding for finding in findings))
+            self.assertTrue(any("progress.percent" in finding for finding in findings))
+
+    def test_check_rejects_phase_state_checkpoint_pointer_drift(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            self.write_sync_fixture(
+                root,
+                phase_state_checkpoint_path=".planning/phases/04-template-consumer-onboarding/WRONG.md",
+                phase_state_current_checkpoint="CP-04-99",
+            )
+            (root / ".planning/phases/04-template-consumer-onboarding/WRONG.md").write_text(
+                "# Wrong checkpoint file\n\n## CP-04-99 - Wrong\n", encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(SystemExit, "Roadmap/state sync invariant"):
+                harness.check(root=root)
+
     def test_init_installs_clean_project_state_without_live_history(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir) / "target"
@@ -157,6 +318,18 @@ class HarnessToolTests(unittest.TestCase):
 
             self.assertEqual("", completed.stderr)
             self.assertEqual(0, completed.returncode)
+
+    def test_installed_target_doctor_does_not_report_generic_sync_p1(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+            harness.run(["init", "--target", str(target)])
+
+            findings = harness.collect_doctor_findings(target)
+
+            self.assertFalse(
+                any(finding.severity == "P1" and finding.code == "roadmap_state_sync" for finding in findings),
+                [finding.to_dict() for finding in findings],
+            )
 
     def test_check_rejects_contaminated_clean_skeleton(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

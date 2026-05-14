@@ -21,6 +21,7 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 | `/bugfix` | Broken behavior, failing tests, wrong output, regression, or unknown root cause | `workflow-bug-diagnosis` | `diagnose` |
 | `/adr` | Durable design decision, architecture boundary, state model, or tradeoff analysis | `workflow-architecture-decision` | `architect` |
 | `/issues` | PRD, local tracker issue, implementation slice, triage, acceptance criteria, or docs-to-work conversion | `workflow-docs-to-issues` | `docs-issues` |
+| `/doctor` | Read-only harness diagnostics for planning/Roo/DB context drift and mutation-readiness guidance | `workflow-harness-doctor` | `harness-maintainer` |
 | harness request | Roo mode, slash command, workflow rule, `AGENTS.md`, `CLAUDE.md`, `.roo/**`, or `.roomodes` change | direct mode | `harness-maintainer` |
 
 ## Tie Breakers

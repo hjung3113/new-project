@@ -25,6 +25,30 @@ Use `.db-context/routines.index.json` to locate stored procedures, functions, an
 
 Do not connect to the database by default. If `.db-context/` exists, it is the source of truth for analysis. Only run `python3 scripts/db_context_snapshot.py --refresh` when the user explicitly asks to refresh DB context.
 
+Refresh config is loaded by Python, not by shell sourcing. Use the same options on Bash, PowerShell, macOS, Linux, and Windows:
+
+```bash
+python3 scripts/db_context_snapshot.py \
+  --refresh \
+  --env-file .env \
+  --snapshot-scope selected \
+  --include-tables dbo.Orders,dbo.Customers \
+  --include-procedures etl.LoadOrders \
+  --include-jobs "Nightly ETL"
+```
+
+```powershell
+python scripts/db_context_snapshot.py `
+  --refresh `
+  --config db-context.config.json `
+  --snapshot-scope selected `
+  --include-tables dbo.Orders,dbo.Customers `
+  --include-procedures etl.LoadOrders `
+  --include-jobs "Nightly ETL"
+```
+
+Config precedence is `CLI > JSON config > .env > inherited environment`. Connection/config options include `--config`, `--env-file`, `--master-connection`, `--master-label`, and repeated `--process-connection`. Snapshot options include `--snapshot-scope shape|selected|full`, `--include-tables`, `--include-procedures`, `--include-jobs`, `--collect-all-process-details`, and `--include-agent-jobs`. Do not mutate environment variables to make a refresh work; pass `--config` or `--env-file` instead.
+
 If DB context is required but missing, stale, or insufficient, return `needs-db-context` instead of guessing or refreshing automatically.
 
 The expected database model is one master database and many process databases. Process databases are expected to share the same schema shape; check `process_database_comparison` before assuming a process DB schema is representative.
