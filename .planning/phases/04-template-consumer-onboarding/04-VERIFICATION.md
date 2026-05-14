@@ -39,3 +39,9 @@ jq . .roomodes >/dev/null
 - #19 green: read-only doctor command, structured findings, JSON/Markdown renderers, and Roo `/doctor` command added; harness suite passed.
 - #19 final-review red: fresh installed targets reported generic P1 roadmap/state drift.
 - #19 final-review green: clean skeleton now satisfies the sync invariant, covered by `test_installed_target_doctor_does_not_report_generic_sync_p1`.
+- Issue #16 red: `test_phase_commands_are_present_and_manifest_owned` failed because `/fsd-phase`, `/phase-discuss`, `/phase-plan`, and `/phase-execute` were absent on current `main`.
+- Issue #16 green: added the four command files, manifest entries, explicit routing rows, and command/manifest/routing/install regression tests.
+- Final-risk red: `upgrade` could mutate a non-initialized target when any manifest path existed.
+- Final-risk green: `upgrade` now always requires `.harness/installed-manifest.json`, covered by `test_upgrade_without_install_state_refuses_existing_manifest_file`.
+- Final-risk red: selected DB refresh could read broad catalog metadata before filtering without an explicit acknowledgment.
+- Final-risk green: every selected refresh now requires `--allow-broad-catalog-read` before connecting, covered by table, procedure, and job selected-refresh tests.

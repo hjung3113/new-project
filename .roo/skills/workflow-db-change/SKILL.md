@@ -32,6 +32,7 @@ python3 scripts/db_context_snapshot.py \
   --refresh \
   --env-file .env \
   --snapshot-scope selected \
+  --allow-broad-catalog-read \
   --include-tables dbo.Orders,dbo.Customers \
   --include-procedures etl.LoadOrders \
   --include-jobs "Nightly ETL"
@@ -42,12 +43,15 @@ python scripts/db_context_snapshot.py `
   --refresh `
   --config db-context.config.json `
   --snapshot-scope selected `
+  --allow-broad-catalog-read `
   --include-tables dbo.Orders,dbo.Customers `
   --include-procedures etl.LoadOrders `
   --include-jobs "Nightly ETL"
 ```
 
-Config precedence is `CLI > JSON config > .env > inherited environment`. Connection/config options include `--config`, `--env-file`, `--master-connection`, `--master-label`, and repeated `--process-connection`. Snapshot options include `--snapshot-scope shape|selected|full`, `--include-tables`, `--include-procedures`, `--include-jobs`, `--collect-all-process-details`, and `--include-agent-jobs`. Do not mutate environment variables to make a refresh work; pass `--config` or `--env-file` instead.
+Config precedence is `CLI > JSON config > .env > inherited environment`. Connection/config options include `--config`, `--env-file`, `--master-connection`, `--master-label`, and repeated `--process-connection`. Snapshot options include `--snapshot-scope shape|selected|full`, `--include-tables`, `--include-procedures`, `--include-jobs`, `--allow-broad-catalog-read`, `--collect-all-process-details`, and `--include-agent-jobs`. Do not mutate environment variables to make a refresh work; pass `--config` or `--env-file` instead.
+
+Selected refresh requires `--allow-broad-catalog-read` because current selected mode filters output after broad fixed catalog reads. Do not add the flag unless the user has confirmed broad catalog access is acceptable. Offline selected filtering from an existing cache does not require this flag.
 
 If DB context is required but missing, stale, or insufficient, return `needs-db-context` instead of guessing or refreshing automatically.
 

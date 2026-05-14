@@ -71,6 +71,7 @@ Supported CLI options are:
 --include-tables
 --include-procedures
 --include-jobs
+--allow-broad-catalog-read
 --collect-all-process-details
 --include-agent-jobs
 ```
@@ -87,6 +88,7 @@ DB_CONTEXT_INCLUDE_PROCEDURES
 DB_CONTEXT_INCLUDE_JOBS
 DB_CONTEXT_COLLECT_ALL_PROCESS_DETAILS
 DB_CONTEXT_INCLUDE_AGENT_JOBS
+DB_CONTEXT_ALLOW_BROAD_CATALOG_READ
 ```
 
 `.env` files may use CRLF line endings, comments, quoted values, and UTF-8 BOM. `DB_CONTEXT_PROCESS_CONNECTIONS` may be JSON or newline-separated `label::connection-string` values.
@@ -153,6 +155,8 @@ python3 scripts/db_context_snapshot.py --refresh --include-agent-jobs
 
 `--include-jobs` is a selected-scope filter and also opts into SQL Agent job collection during `--refresh`.
 
+Selected refresh currently reads broad catalog metadata before filtering the output, even when only tables are selected. This keeps the SQL fixed and avoids ad hoc query construction, but it is not least-collection. Use `--allow-broad-catalog-read` only after confirming that broad catalog metadata access is acceptable for the target DB. Offline selected filtering from an existing cache does not require this flag and does not connect.
+
 ## Snapshot Scopes
 
 `--snapshot-scope shape` collects table, column, key, and index shape only. Use it for broad drift checks when routine bodies are unnecessary.
@@ -164,6 +168,7 @@ python3 scripts/db_context_snapshot.py \
   --refresh \
   --config db-context.config.json \
   --snapshot-scope selected \
+  --allow-broad-catalog-read \
   --include-tables dbo.Orders,dbo.Customers \
   --include-procedures etl.LoadOrders \
   --include-jobs "Nightly ETL"
@@ -174,6 +179,7 @@ python scripts/db_context_snapshot.py `
   --refresh `
   --config db-context.config.json `
   --snapshot-scope selected `
+  --allow-broad-catalog-read `
   --include-tables dbo.Orders,dbo.Customers `
   --include-procedures etl.LoadOrders `
   --include-jobs "Nightly ETL"

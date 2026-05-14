@@ -47,7 +47,26 @@ Issue #16 is still open. It overlaps with command distribution and routing check
 
 ### Open Questions
 
-- None blocking. Managed-block merging for README/AGENTS remains deferred unless needed by the implementation.
+- None blocking.
+
+### Issue #16 Managed-File Policy Decision
+
+`AGENTS.md` and `README.md` will be treated as managed-block merge targets for harness upgrades: initial install creates the full files from the clean skeleton, and future upgrade support should refresh only explicitly marked harness-managed blocks while preserving target-repo edits outside those blocks.
+
+This is a policy decision, not an implementation claim for this slice. Current `scripts/harness.py upgrade` behavior still treats manifest `managed` files as file-level conflict candidates. Full managed-block merge requires block markers, a merge algorithm, dry-run/diff reporting, rollback/conflict tests, and updated operator docs in the same future change.
+
+Decision basis:
+
+- Preserves target repo edits better than whole-file replacement or whole-file conflicts.
+- Keeps Roo Code, Codex, and Claude instruction files compatible because each tool can keep local additions outside harness blocks.
+- Supports low-reasoning agents by making harness-owned sections explicit and machine-checkable.
+- Can be implemented with platform-neutral Python text processing and deterministic dry-run output.
+- Aligns with the existing manifest distinction between `managed`, `harness-owned`, and `project-owned`.
+
+Rejected alternatives:
+
+- Whole-file protection for `AGENTS.md` and `README.md`: safer mechanically today, but it makes routine harness upgrades conflict with normal target-project customization.
+- Unconditional whole-file overwrite on upgrade: unacceptable because it can erase project-specific instructions and onboarding text.
 
 ## Non-Goals
 

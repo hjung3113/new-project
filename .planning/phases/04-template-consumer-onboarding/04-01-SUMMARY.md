@@ -15,9 +15,14 @@ Implemented harness sync, DB context compatibility, and doctor diagnostics for i
 - Added cached offline selected-snapshot filtering without DB connection.
 - Added `workflow-harness-doctor` so doctor is available through both command and skill workflow.
 - Updated ADR, phase gate, DB workflow, README, and DB snapshot docs.
+- Added `/phase-discuss`, `/phase-plan`, `/phase-execute`, and `/fsd-phase` command files with manifest distribution and explicit subtask-first orchestrator routing.
+- Added manifest coverage tests for every non-README command file, command frontmatter/guardrail tests, and installed-target copy checks for phase commands.
+- Recorded the `AGENTS.md`/`README.md` policy decision: initial install creates full files; future upgrades should use managed-block merge for marked harness sections, while current `managed` behavior remains file-level conflict reporting until block merge is implemented.
+- Hardened `upgrade` so it refuses targets without `.harness/installed-manifest.json` even when manifest paths already exist.
+- Hardened selected DB snapshot refresh so it requires `--allow-broad-catalog-read` before connecting, because current selected mode filters output after broad fixed catalog reads.
 
 ## Final Review
 
 Final adversarial review found three P1 findings. All were fixed before PR: fresh-target doctor sync noise, offline selected cache filtering, and `.env` gitignore coverage.
 
-Remaining P2/P3 risk: selected snapshots currently filter fixed catalog-query output rather than pushing selected names into SQL predicates. This avoids arbitrary SQL and is acceptable for this slice; query-level selected predicates can be a follow-up if large DB performance or sensitive unselected job command transfer becomes a problem.
+Remaining P2/P3 risk: selected snapshots currently filter fixed catalog-query output rather than pushing selected names into SQL predicates. The production-safety risk is mitigated by requiring explicit `--allow-broad-catalog-read` for selected refresh before any DB connection. Query-level selected predicates can be a follow-up if large DB performance or least-collection requirements become important.

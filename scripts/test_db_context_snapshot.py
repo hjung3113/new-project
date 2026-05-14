@@ -246,6 +246,55 @@ class DbContextSnapshotTests(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit, "--offline cannot be combined with --refresh"):
                 snap.main(["--refresh", "--offline"])
 
+    def test_selected_refresh_with_procedures_requires_broad_catalog_ack_before_connecting(self) -> None:
+        with mock.patch.object(snap, "connect", side_effect=AssertionError("must not connect")):
+            with self.assertRaisesRegex(SystemExit, "--allow-broad-catalog-read"):
+                snap.main(
+                    [
+                        "--refresh",
+                        "--master-connection",
+                        "master",
+                        "--process-connection",
+                        "process",
+                        "--snapshot-scope",
+                        "selected",
+                        "--include-procedures",
+                        "dbo.LoadOrders",
+                    ]
+                )
+
+    def test_selected_refresh_with_jobs_requires_broad_catalog_ack_before_connecting(self) -> None:
+        with mock.patch.object(snap, "connect", side_effect=AssertionError("must not connect")):
+            with self.assertRaisesRegex(SystemExit, "--allow-broad-catalog-read"):
+                snap.main(
+                    [
+                        "--refresh",
+                        "--master-connection",
+                        "master",
+                        "--snapshot-scope",
+                        "selected",
+                        "--include-jobs",
+                        "Nightly ETL",
+                    ]
+                )
+
+    def test_selected_refresh_with_tables_requires_broad_catalog_ack_before_connecting(self) -> None:
+        with mock.patch.object(snap, "connect", side_effect=AssertionError("must not connect")):
+            with self.assertRaisesRegex(SystemExit, "--allow-broad-catalog-read"):
+                snap.main(
+                    [
+                        "--refresh",
+                        "--master-connection",
+                        "master",
+                        "--process-connection",
+                        "process",
+                        "--snapshot-scope",
+                        "selected",
+                        "--include-tables",
+                        "dbo.Orders",
+                    ]
+                )
+
     def test_shape_mode_comparison_ignores_full_only_objects(self) -> None:
         reference = self.database(
             "reference",

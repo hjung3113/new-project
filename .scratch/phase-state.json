@@ -4,12 +4,12 @@
   "approved": true,
   "approved_by": "human-chain-request",
   "approved_at": "2026-05-14T00:00:00Z",
-  "summary": "Resolve issues #17, #18, and #19 through roadmap/state sync checks, Windows-compatible selective DB context snapshot, and harness doctor diagnostics. Docker scope excluded.",
+  "summary": "Resolve issues #17, #18, #19, and #16 through roadmap/state sync checks, Windows-compatible DB context snapshot controls, harness doctor diagnostics, and phase command distribution/routing. Docker scope excluded.",
   "plan_path": ".planning/phases/04-template-consumer-onboarding/04-01-PLAN.md",
   "state_path": ".planning/STATE.md",
   "checkpoint_path": ".planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md",
   "current_checkpoint": "CP-04-06",
-  "next_action": "Commit, push, and open a PR for plan harness-sync-doctor-04-01; merge if GitHub permits without additional human approval.",
+  "next_action": "Review and merge PR #21 for Issue #16 phase command distribution/routing; PR #15 was not modified.",
   "allowed_paths": [
     "AGENTS.md",
     "README.md",
@@ -52,7 +52,7 @@
     "python3 -m json.tool .roomodes >/dev/null"
   ],
   "notes": [
-    "Issue #16 is open and related but not the active scope unless command/routing consistency is directly needed.",
+    "Issue #16 command distribution/routing was implemented on branch codex/issue-16-phase-command-routing and opened as PR #21; PR #15 was used as reference only and not modified.",
     "Docker-related changes are blocked by user instruction.",
     "No DB connection is allowed unless DB snapshot refresh is explicit."
   ],
