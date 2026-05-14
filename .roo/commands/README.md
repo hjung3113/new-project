@@ -13,6 +13,10 @@ These commands are the user-facing entry points for the template.
 | `/adr` | `architect` | Run the architecture workflow for durable design decisions, boundaries, state models, tradeoffs, or implementation planning. |
 | `/review` | `review` | Run the read-only review workflow for code, SQL, ETL, tests, performance, or operations risk. |
 | `/issues` | `docs-issues` | Convert docs and plans into PRDs, local tracker issues, acceptance criteria, and implementation slices. |
+| `/phase-discuss` | `architect` | Run the phase-gate discuss step only (read-only discovery and alignment). |
+| `/phase-plan` | `architect` | Run the phase-gate plan step only (plan docs, scope, criteria, verification, approval request). |
+| `/phase-execute` | `orchestrator` | Run the phase-gate execute step only (implementation for an already approved plan). |
+| `/fsd-phase` | `architect` | Recommended one-command phase flow; runs discuss -> plan -> execute with `--chain` when gate conditions pass. |
 
 Slash commands stay thin. Use `.roo/rules-orchestrator/rules.md` for exclusive routing and tie breakers; use the workflow skill or owning mode for the actual sequence.
 
@@ -24,3 +28,9 @@ Any workflow that uses the phase gate may receive these prompt flags:
 - `--chain`: run one phase's reviewed `discuss -> plan -> execute` path with recommended defaults only when `.scratch/phase-state.json` is verified or written with `phase=execute`, matching `plan_id`, `approved=true`, `automation_mode=chain`, durable pointers, non-empty `allowed_paths`, non-empty `verification`, and no unresolved P1 adversarial review finding.
 
 Flags do not skip phase-local `discuss`, alignment summary, adversarial review, plan approval evidence, or verification.
+
+## Phase Command Usage
+
+- Manual step-by-step: `/phase-discuss` -> `/phase-plan` -> `/phase-execute`.
+- One-pass automation: run a workflow command with `--chain` to continue the same phase through `discuss -> plan -> execute` when gate conditions are satisfied.
+- `--chain` does not skip gate safety checks; if conditions fail, it must stop before execute.
