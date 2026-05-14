@@ -8,4 +8,6 @@ Use the `workflow-db-change` skill for $ARGUMENTS.
 
 Apply `.roo/rules-orchestrator/rules.md` and `.roo/rules/phase-gate.md` first. Stay on `/db` only for MSSQL schema, EF migration, SQL implementation, indexing, transaction, Dapper read-query exceptions, `SqlBulkCopy`, staging, `MERGE`, or persistence migration work. Route read-only SQL review to `/review`.
 
-DB context refresh, when explicitly requested by the user, uses `scripts/db_context_snapshot.py`. Connection/config options include `--config`, `--env-file`, `--master-connection`, `--master-label`, and repeated `--process-connection`. Snapshot options include `--snapshot-scope shape|selected|full`, `--include-tables`, `--include-procedures`, `--include-jobs`, `--collect-all-process-details`, and `--include-agent-jobs`.
+DB context refresh, when explicitly requested by the user, uses `scripts/db_context_snapshot.py`. Connection/config options include `--config`, `--env-file`, `--master-connection`, `--master-label`, and repeated `--process-connection`. Snapshot options include `--snapshot-scope shape|selected|full`, `--include-tables`, `--include-procedures`, `--include-jobs`, `--allow-broad-catalog-read`, `--collect-all-process-details`, and `--include-agent-jobs`.
+
+Selected refresh requires `--allow-broad-catalog-read` because current selected mode filters output after broad fixed catalog reads. Do not add the flag unless the user has confirmed broad catalog access is acceptable.

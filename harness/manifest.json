@@ -52,6 +52,11 @@
       "policy": "harness-owned"
     },
     {
+      "path": ".roo/commands/fsd-phase.md",
+      "source": ".roo/commands/fsd-phase.md",
+      "policy": "harness-owned"
+    },
+    {
       "path": ".roo/commands/etl.md",
       "source": ".roo/commands/etl.md",
       "policy": "harness-owned"
@@ -69,6 +74,21 @@
     {
       "path": ".roo/commands/ops.md",
       "source": ".roo/commands/ops.md",
+      "policy": "harness-owned"
+    },
+    {
+      "path": ".roo/commands/phase-discuss.md",
+      "source": ".roo/commands/phase-discuss.md",
+      "policy": "harness-owned"
+    },
+    {
+      "path": ".roo/commands/phase-execute.md",
+      "source": ".roo/commands/phase-execute.md",
+      "policy": "harness-owned"
+    },
+    {
+      "path": ".roo/commands/phase-plan.md",
+      "source": ".roo/commands/phase-plan.md",
       "policy": "harness-owned"
     },
     {

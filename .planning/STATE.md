@@ -2,7 +2,7 @@
 gsd_state_version: 1.0
 milestone: m1
 milestone_name: reusable low-reasoning Roo harness
-status: harness sync, DB compatibility, and doctor implementation complete; PR prep in progress
+status: harness sync, DB compatibility, doctor, and phase command routing implementation complete; PR prep in progress
 last_updated: "2026-05-14T00:00:00.000Z"
 progress:
   total_phases: 5
@@ -18,20 +18,20 @@ progress:
 
 - **Core value**: A reusable Roo Code harness that keeps low-reasoning models inside explicit workflows for C#/.NET ETL projects.
 - **Current milestone**: Milestone 1 - reusable low-reasoning Roo harness.
-- **Current focus**: Phase 4 harness sync, DB snapshot compatibility, and doctor implementation for issues #17, #18, and #19.
+- **Current focus**: Phase 4 harness sync, DB snapshot compatibility, doctor implementation, and Issue #16 phase command distribution/routing.
 
 ## Current Position
 
 - **Phase**: 4 - Harness Sync, DB Compatibility, and Doctor **EXECUTE APPROVED**.
 - **Plan**: 04-01 in progress - sync, DB selection, and doctor.
-- **Status**: Implementation, local verification, and final adversarial review are complete; commit and PR are next.
+- **Status**: Implementation, local verification, design/implementation/final risk reviews, and P0/P1 mitigations are complete; commit and PR are next.
 - **Progress**: Phase 4: 0/1 plan complete; 3/5 phases complete overall.
 
 ## Active Checkpoint
 
 - **Checkpoint**: CP-04-06 - final review, verification, and PR prep.
 - **Checkpoint file**: `.planning/phases/04-template-consumer-onboarding/04-CHECKPOINTS.md`.
-- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 4 checkpoint file. Final review P1 findings are fixed; commit, push, and open PR next.
+- **Restart instruction**: Read this file, then `ROADMAP.md`, then the active Phase 4 checkpoint file. Issue #16 command distribution/routing and final P1 mitigations are fixed; commit, push, and open PR next.
 
 ## Accumulated Context
 
@@ -47,11 +47,11 @@ progress:
 - DB context refresh may reuse cached per-database detail when table/routine/trigger `modify_date` markers, server/database identity, and redaction/truncation options are unchanged.
 - Harness-owned files are distributed through `harness/manifest.json`.
 - Project-owned planning state is initialized from `harness/skeleton/clean/**` and is not overwritten by `upgrade`.
-- Issue #16 remains open and related to command distribution/routing checks, but #17-#19 are the active implementation scope. Docker-related work is explicitly excluded.
+- Issue #16 command distribution/routing has been implemented on a new branch separate from PR #15. Docker-related work is explicitly excluded.
 
 ### Outstanding open questions
 
-- Whether managed-block merging for `AGENTS.md` and `README.md` should replace current file-level conflict behavior.
+- None blocking. `AGENTS.md` and `README.md` policy is decided: future upgrades should use managed-block merge for marked harness sections, while current `managed` behavior remains file-level conflict reporting until that algorithm is implemented.
 
 ### Deferred queue
 

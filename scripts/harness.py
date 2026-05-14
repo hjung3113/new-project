@@ -150,10 +150,7 @@ def upgrade(*, root: Path, target: Path, dry_run: bool = False, force: bool = Fa
     target = target.resolve()
     installed = read_install_state(target)
     installed_paths = installed.get("files", {})
-    existing_manifest_paths = [
-        entry for entry in entries if (target / entry.path).exists() or (target / entry.path).is_symlink()
-    ]
-    if installed.get("version") is None and not existing_manifest_paths:
+    if installed.get("version") is None:
         raise SystemExit("Target is not initialized. Run init before upgrade.")
     conflicts = 0
 

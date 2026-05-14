@@ -279,18 +279,18 @@ progress:
             self.assertEqual("local command edit", command.read_text(encoding="utf-8"))
             self.assertTrue((target / ".harness/conflicts/.roo/commands/simple.md.new").exists())
 
-    def test_upgrade_without_install_state_conflicts_existing_harness_file(self) -> None:
+    def test_upgrade_without_install_state_refuses_existing_manifest_file(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             target = Path(tmpdir) / "target"
             command = target / ".roo/commands/simple.md"
             command.parent.mkdir(parents=True)
             command.write_text("unknown local file", encoding="utf-8")
 
-            result = harness.run(["upgrade", "--target", str(target)])
+            with self.assertRaisesRegex(SystemExit, "not initialized"):
+                harness.run(["upgrade", "--target", str(target)])
 
-            self.assertEqual(1, result)
             self.assertEqual("unknown local file", command.read_text(encoding="utf-8"))
-            self.assertTrue((target / ".harness/conflicts/.roo/commands/simple.md.new").exists())
+            self.assertFalse((target / ".harness/conflicts/.roo/commands/simple.md.new").exists())
 
     def test_upgrade_without_install_state_does_not_bootstrap_empty_target(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -308,7 +308,7 @@ progress:
             harness.run(["init", "--target", str(target)])
 
             completed = subprocess.run(
-                ["python3", "scripts/harness.py", "check"],
+                [sys.executable, "scripts/harness.py", "check"],
                 cwd=target,
                 check=False,
                 text=True,
@@ -373,6 +373,144 @@ progress:
 
             with self.assertRaisesRegex(SystemExit, "auto_selected\\[0\\] must be an object"):
                 harness.check_phase_state_semantics(path)
+
+    def test_phase_commands_are_present_and_manifest_owned(self) -> None:
+        root = harness.repo_root()
+        manifest_entries = {entry.path.as_posix(): entry for entry in harness.load_manifest(root)}
+        required_commands = {
+            ".roo/commands/fsd-phase.md",
+            ".roo/commands/phase-discuss.md",
+            ".roo/commands/phase-plan.md",
+            ".roo/commands/phase-execute.md",
+        }
+
+        missing_files = [path for path in sorted(required_commands) if not (root / path).exists()]
+        missing_manifest = [path for path in sorted(required_commands) if path not in manifest_entries]
+        wrong_policy = [
+            path
+            for path in sorted(required_commands)
+            if path in manifest_entries and manifest_entries[path].policy != "harness-owned"
+        ]
+
+        self.assertEqual([], missing_files)
+        self.assertEqual([], missing_manifest)
+        self.assertEqual([], wrong_policy)
+
+    def test_all_command_files_except_readme_are_manifest_owned(self) -> None:
+        root = harness.repo_root()
+        manifest_entries = {entry.path.as_posix(): entry for entry in harness.load_manifest(root)}
+        command_paths = {
+            path.relative_to(root).as_posix()
+            for path in (root / ".roo/commands").glob("*.md")
+            if path.name != "README.md"
+        }
+
+        missing_manifest = sorted(command_paths - set(manifest_entries))
+        wrong_policy = sorted(
+            path for path in command_paths if path in manifest_entries and manifest_entries[path].policy != "harness-owned"
+        )
+        wrong_source = sorted(
+            path
+            for path in command_paths
+            if path in manifest_entries and manifest_entries[path].source.as_posix() != path
+        )
+
+        self.assertEqual([], missing_manifest)
+        self.assertEqual([], wrong_policy)
+        self.assertEqual([], wrong_source)
+
+    def test_phase_commands_have_explicit_subtask_first_routing(self) -> None:
+        root = harness.repo_root()
+        rules = (root / ".roo/rules-orchestrator/rules.md").read_text(encoding="utf-8")
+        routing_rows = self.parse_routing_table(rules)
+        expected_rows = {
+            "/phase-discuss": ("`workflow-phase-gate`", "`architect`"),
+            "/phase-plan": ("`workflow-phase-gate`", "`architect`"),
+            "/phase-execute": ("`workflow-phase-gate`", "`orchestrator` then owning mode"),
+            "/fsd-phase": ("`workflow-phase-gate`", "`orchestrator` then owning modes"),
+        }
+
+        for command, (workflow, owner) in expected_rows.items():
+            self.assertIn(command, routing_rows)
+            self.assertEqual(workflow, routing_rows[command]["workflow"])
+            self.assertEqual(owner, routing_rows[command]["owner"])
+        self.assertLess(routing_rows["/phase-execute"]["index"], routing_rows["harness request"]["index"])
+        self.assertLess(routing_rows["/fsd-phase"]["index"], routing_rows["harness request"]["index"])
+        self.assertIn("Phase command rows do not override Subtask-First Execution", rules)
+        for phrase in ("`phase=execute`", "`approved=true`", "`plan_id`", "`allowed_paths`", "`verification`"):
+            self.assertIn(phrase, rules)
+        self.assertIn("If `new_task` is unavailable, output the handoff packet and stop", rules)
+
+    def parse_routing_table(self, rules: str) -> dict[str, dict[str, object]]:
+        rows: dict[str, dict[str, object]] = {}
+        for index, line in enumerate(rules.splitlines()):
+            if not line.startswith("| "):
+                continue
+            cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+            if len(cells) != 4 or cells[0] in {"User entry", "---"}:
+                continue
+            rows[cells[0].strip("`")] = {
+                "index": index,
+                "scope": cells[1],
+                "workflow": cells[2],
+                "owner": cells[3],
+            }
+        return rows
+
+    def test_phase_command_files_keep_thin_workflow_contract(self) -> None:
+        root = harness.repo_root()
+        expected_modes = {
+            "fsd-phase.md": "orchestrator",
+            "phase-discuss.md": "architect",
+            "phase-plan.md": "architect",
+            "phase-execute.md": "orchestrator",
+        }
+        required_phrases = {
+            "fsd-phase.md": [
+                "Use the `workflow-phase-gate` skill for $ARGUMENTS.",
+                "not an inline implementation command",
+                "If `new_task` is unavailable, output the handoff packet and stop.",
+            ],
+            "phase-discuss.md": [
+                "Use the `workflow-phase-gate` skill for $ARGUMENTS.",
+                "Do not edit implementation files.",
+            ],
+            "phase-plan.md": [
+                "Use the `workflow-phase-gate` skill for $ARGUMENTS.",
+                "Do not implement behavior changes.",
+                "Do not edit implementation files.",
+            ],
+            "phase-execute.md": [
+                "Use the `workflow-phase-gate` skill for $ARGUMENTS.",
+                "Do not implement inline from orchestrator.",
+                "If `new_task` is unavailable, output the handoff packet and stop.",
+            ],
+        }
+
+        for filename, mode in expected_modes.items():
+            text = (root / ".roo/commands" / filename).read_text(encoding="utf-8")
+            self.assertRegex(text, rf"(?m)^mode:\s*{mode}\s*$")
+            self.assertRegex(text, r"(?m)^argument-hint:\s*.+$")
+            for phrase in required_phrases[filename]:
+                self.assertIn(phrase, text)
+
+    def test_init_installs_phase_commands_from_manifest_sources(self) -> None:
+        root = harness.repo_root()
+        command_paths = [
+            ".roo/commands/fsd-phase.md",
+            ".roo/commands/phase-discuss.md",
+            ".roo/commands/phase-plan.md",
+            ".roo/commands/phase-execute.md",
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            target = Path(tmpdir) / "target"
+            harness.run(["init", "--target", str(target)])
+
+            for path in command_paths:
+                self.assertEqual(
+                    (root / path).read_text(encoding="utf-8"),
+                    (target / path).read_text(encoding="utf-8"),
+                )
 
 
 if __name__ == "__main__":

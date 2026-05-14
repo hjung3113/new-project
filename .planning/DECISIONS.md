@@ -10,6 +10,7 @@ Status values: `Proposed`, `Accepted`, `Locked`, `Superseded`.
 | DEC-0004 | Accepted | New sessions start at `.planning/STATE.md`, then read live phase state. | `.planning/HANDOFF-PROTOCOL.md`, `AGENTS.md` | Continuity |
 | DEC-0005 | Accepted | Phase 3 adds mechanical checks for phase-state validity, allowed-path drift, harness ownership, and clean-skeleton contamination. | `.planning/ROADMAP.md`, `scripts/harness.py` | Enforcement |
 | DEC-0006 | Accepted | Target projects consume the harness through a clean skeleton plus manifest-based init/upgrade; live project planning state is project-owned and not overwritten by upgrade. | `harness/manifest.json`, `harness/skeleton/clean/` | Distribution |
+| DEC-0007 | Accepted | `AGENTS.md` and `README.md` should use managed-block merge semantics for harness-owned sections: initial install creates the full files, while upgrade refreshes only marked harness blocks and preserves target-repo edits outside those blocks. Until the merge algorithm exists, `managed` remains file-level conflict behavior and docs must not claim automatic block merging is implemented. | `harness/manifest.json`, `README.md`, Issue #16 design review | Distribution |
 
 ## Promotion Rule
 

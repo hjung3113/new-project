@@ -22,6 +22,10 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 | `/adr` | Durable design decision, architecture boundary, state model, or tradeoff analysis | `workflow-architecture-decision` | `architect` |
 | `/issues` | PRD, local tracker issue, implementation slice, triage, acceptance criteria, or docs-to-work conversion | `workflow-docs-to-issues` | `docs-issues` |
 | `/doctor` | Read-only harness diagnostics for planning/Roo/DB context drift and mutation-readiness guidance | `workflow-harness-doctor` | `harness-maintainer` |
+| `/phase-discuss` | Phase-local read-only discovery, repo-derived answers, constraints, recommended defaults, and blocking questions | `workflow-phase-gate` | `architect` |
+| `/phase-plan` | Phase-local planning docs, `plan_id`, allowed paths, acceptance criteria, verification, review gates, and execute approval request | `workflow-phase-gate` | `architect` |
+| `/phase-execute` | Verify approved execute gate, then create owning-mode implementation handoff; orchestrator must not implement inline | `workflow-phase-gate` | `orchestrator` then owning mode |
+| `/fsd-phase` | Recommended phase lifecycle entry through canonical phase gate and subtask handoffs; orchestrator must not implement inline | `workflow-phase-gate` | `orchestrator` then owning modes |
 | harness request | Roo mode, slash command, workflow rule, `AGENTS.md`, `CLAUDE.md`, `.roo/**`, or `.roomodes` change | direct mode | `harness-maintainer` |
 
 ## Tie Breakers
@@ -37,6 +41,8 @@ Use the first matching route. Do not run two workflow commands for one slice; sp
 - If the request is an implementation feature but no specialized owner applies, use `/feature`.
 - If the request is broken and the cause is unknown, use `/bugfix`; reroute only after the cause is proven.
 - If the request is planning or issue writing only, use `/adr` or `/issues`; do not implement from those modes.
+- Phase command rows do not override Subtask-First Execution. `/phase-execute` requires a verified `.scratch/phase-state.json` with matching `phase=execute`, `approved=true`, `plan_id`, durable pointers, non-empty `allowed_paths`, and non-empty `verification` before any owning-mode handoff.
+- `/fsd-phase --chain` may advance through discuss, plan, and execute only through canonical `workflow-phase-gate` conditions; if any condition fails, stop before execute.
 
 - Delegate implementation to the narrowest mode that owns the concern.
 - Require verification evidence before completion.

@@ -67,7 +67,7 @@ python3 scripts/project_dashboard.py
 | 분류 | 예시 | upgrade 동작 |
 | --- | --- | --- |
 | `harness-owned` | `.roo/**`, `.roomodes`, `.scratch/phase-state.schema.json`, `.scratch/phase-state.example.json`, `scripts/harness.py` | 설치된 hash와 다르면 충돌 보고, 아니면 갱신 |
-| `managed` | `AGENTS.md`, `README.md` | 현재는 파일 단위로 충돌 보고, 이후 managed block 병합 후보 |
+| `managed` | `AGENTS.md`, `README.md` | 정책상 managed-block merge 대상입니다. 현재 구현은 파일 단위 충돌 보고이며, block marker/merge/dry-run/rollback 검증이 추가되기 전까지 자동 block 병합을 수행하지 않습니다. |
 | `project-owned` | `.planning/**`, `.scratch/phase-state.json` | init 때만 생성, upgrade는 보존 |
 | `exclude` | `.git`, `.db-context/**`, generated artifacts | 설치/업그레이드 대상 아님 |
 

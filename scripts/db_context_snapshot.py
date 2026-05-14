@@ -36,6 +36,7 @@ ENV_CONFIG_KEYS: dict[str, str] = {
     "DB_CONTEXT_INCLUDE_PROCEDURES": "include_procedures",
     "DB_CONTEXT_INCLUDE_JOBS": "include_jobs",
     "DB_CONTEXT_INCLUDE_AGENT_JOBS": "include_agent_jobs",
+    "DB_CONTEXT_ALLOW_BROAD_CATALOG_READ": "allow_broad_catalog_read",
     "DB_CONTEXT_COLLECT_ALL_PROCESS_DETAILS": "collect_all_process_details",
     "DB_CONTEXT_OUTPUT_DIR": "output_dir",
     "DB_CONTEXT_FORMAT": "format",
@@ -254,6 +255,7 @@ def resolve_config(args: argparse.Namespace, *, environ: dict[str, str] | None =
         "include_procedures": [],
         "include_jobs": [],
         "include_agent_jobs": False,
+        "allow_broad_catalog_read": False,
         "process_reference_only": True,
         "format": "markdown",
         "max_definition_chars": 300_000,
@@ -286,7 +288,7 @@ def resolve_config(args: argparse.Namespace, *, environ: dict[str, str] | None =
             value = split_csv(value)
         elif field == "process_connection":
             value = normalize_process_connection_values(value)
-        elif field in {"include_agent_jobs"}:
+        elif field in {"include_agent_jobs", "allow_broad_catalog_read"}:
             value = parse_bool(value)
         elif field == "process_reference_only":
             if isinstance(value, dict) and "process_reference_only" in value:
@@ -605,8 +607,22 @@ def collection_options(args: argparse.Namespace) -> dict[str, Any]:
         "redaction_version": 1,
     }
     options.update(selection_options(args))
+    options["allow_broad_catalog_read"] = bool(getattr(args, "allow_broad_catalog_read", False))
     options["config_sources"] = getattr(args, "config_sources", {})
     return options
+
+
+def requires_broad_selected_catalog_read(args: argparse.Namespace) -> bool:
+    return getattr(args, "snapshot_scope", "full") == "selected"
+
+
+def check_broad_selected_catalog_read(args: argparse.Namespace) -> None:
+    if requires_broad_selected_catalog_read(args) and not getattr(args, "allow_broad_catalog_read", False):
+        raise SystemExit(
+            "--snapshot-scope selected currently reads broad catalog metadata before output filtering. "
+            "Re-run with --allow-broad-catalog-read after confirming this "
+            "is acceptable, or use offline filtering from an existing cache."
+        )
 
 
 def canonical_name(*parts: Any) -> str:
@@ -1113,6 +1129,7 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
     parser.add_argument("--include-tables", help="Comma-separated table names for --snapshot-scope selected.")
     parser.add_argument("--include-procedures", help="Comma-separated stored procedure names for --snapshot-scope selected.")
     parser.add_argument("--include-jobs", help="Comma-separated SQL Agent job names for --snapshot-scope selected.")
+    parser.add_argument("--allow-broad-catalog-read", action="store_true", default=None, help="Permit selected refreshes that read broad routine or SQL Agent catalog metadata before output filtering.")
     parser.add_argument("--collect-all-process-details", dest="process_reference_only", action="store_false", default=None, help="Collect full modules/triggers/types for every process DB. Default collects full detail only for the first process DB and shape fingerprints for the rest.")
     parser.add_argument("--include-agent-jobs", action="store_true", default=None, help="Read SQL Agent job metadata from msdb through the master connection.")
     parser.add_argument("--format", choices=("json", "markdown"), help="Console output format.")
@@ -1132,6 +1149,7 @@ def main(argv: Iterable[str] = sys.argv[1:]) -> int:
     if not args.refresh:
         report = load_cached_report(output_dir, args=args)
     else:
+        check_broad_selected_catalog_read(args)
         report = build_report(args)
         output_dir.mkdir(parents=True, exist_ok=True)
         split_artifacts(report, output_dir)
