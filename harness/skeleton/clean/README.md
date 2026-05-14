@@ -9,6 +9,8 @@ This repository has been initialized with the reusable Roo harness.
 3. Read `.planning/ROADMAP.md`.
 4. Read `.scratch/phase-state.json`.
 
+`AGENTS.md` includes the default Karpathy-Inspired Coding Guidelines from `multica-ai/andrej-karpathy-skills`.
+
 ## Harness Commands
 
 ```bash

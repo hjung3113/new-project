@@ -197,6 +197,15 @@ progress:
             self.assertTrue((target / ".roo/skills/workflow-phase-gate/SKILL.md").exists())
             self.assertTrue((target / "scripts/project_dashboard.py").exists())
             self.assertTrue((target / "scripts/test_project_dashboard.py").exists())
+            agents = (target / "AGENTS.md").read_text(encoding="utf-8")
+            self.assertIn("Karpathy-Inspired Coding Guidelines", agents)
+            for phrase in (
+                "Think Before Coding",
+                "Simplicity First",
+                "Surgical Changes",
+                "Goal-Driven Execution",
+            ):
+                self.assertIn(phrase, agents)
             self.assertIn("project_dashboard.py", (target / "README.md").read_text(encoding="utf-8"))
 
     def test_init_refuses_to_overwrite_existing_project_file(self) -> None:

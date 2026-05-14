@@ -4,6 +4,23 @@
 
 목표는 단순합니다. 작업이 커져도 에이전트가 즉흥적으로 코드를 만지지 않고, 설계 문서와 phase/checkpoint를 기준으로 계획, 승인, 구현, 검증, 종료까지 이어가게 만드는 것입니다. 세션을 초기화해도 [.planning/STATE.md](.planning/STATE.md)에서 현재 위치와 다음 행동을 복구할 수 있어야 합니다.
 
+## 목차
+
+- [핵심 원칙](#핵심-원칙)
+- [오케스트레이터/서브태스크 실행 모델](#오케스트레이터서브태스크-실행-모델)
+- [새 세션 시작 순서](#새-세션-시작-순서)
+- [하네스 배포와 업데이트](#하네스-배포와-업데이트)
+- [큰 작업 흐름](#큰-작업-흐름)
+- [자동 진행 플래그](#자동-진행-플래그)
+- [Slash command와 workflow skill 매핑](#slash-command와-workflow-skill-매핑)
+- [Workflow skill 설명](#workflow-skill-설명)
+- [DB context snapshot](#db-context-snapshot)
+- [Mode 소유권](#mode-소유권)
+- [Phase gate 상세](#phase-gate-상세)
+- [문서 중심 관리 구조](#문서-중심-관리-구조)
+- [구현 workflow 예시](#구현-workflow-예시)
+- [검증 명령](#검증-명령)
+
 ## 핵심 원칙
 
 - 모든 요청은 하나의 소유 workflow로 라우팅합니다.
@@ -13,7 +30,7 @@
 - SQL, migration, writer, transaction, restart, idempotency는 mock이나 SQLite가 아니라 `testcontainers-dotnet` + 실제 MSSQL 컨테이너로 검증합니다.
 - `.planning/`은 영속적인 프로젝트 기억입니다. `.scratch/phase-state.json`은 현재 phase에서 허용된 작업을 나타내는 live gate일 뿐입니다.
 - planning 문서, Roo 설정, tracker, application code의 소유권을 mode별로 분리합니다.
-- [AGENTS.md](AGENTS.md)에는 [andrej-karpathy-skills의 CLAUDE.md](https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md)를 참고한 coding conduct 규칙을 추가했습니다.
+- [AGENTS.md](AGENTS.md)에는 [multica-ai/andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills)를 참고한 coding conduct 규칙을 추가했습니다.
 
 ## 오케스트레이터/서브태스크 실행 모델
 
@@ -54,7 +71,12 @@ python3 scripts/project_dashboard.py
 
 이 명령은 `.planning/**`, `.scratch/**`, `docs/**`, `README.md`, `AGENTS.md`를 읽고 [.scratch/reports/project-dashboard.html](.scratch/reports/project-dashboard.html)을 만듭니다. 생성된 HTML은 커밋하지 않는 로컬 산출물이며, roadmap은 `Done / In Progress / Remaining` 칸반으로 표시됩니다.
 
+대시보드는 특히 “지금이 discuss, plan, execute, done 중 어디인가?”를 빠르게 확인하는 용도입니다. `Gate Details`에는 `.scratch/phase-state.json`의 `phase`, `plan_id`, 승인 여부, 승인자, 승인 시각, `current_checkpoint`, `automation_mode`, durable 문서 포인터, next action이 표시됩니다. `Live Gate`에는 acceptance criteria, verification commands, allowed paths, blocked paths, notes가 표시됩니다. `.planning/STATE.md`와 `.scratch/phase-state.json`이 서로 다른 checkpoint를 가리키거나 roadmap progress가 어긋나면 warning으로 노출됩니다.
+
+현재 이 하네스 개발 repo의 durable state는 Phase 5 `discuss`입니다. PR #21까지 merge되어 Phase 4의 roadmap/state sync, Windows-compatible DB snapshot controls, harness doctor, phase command distribution/routing이 적용되었습니다. 다음 큰 작업은 Phase 5 alignment를 진행하는 것이고, 작은 README/dashboard 정리는 명시적으로 요청된 경우 `/simple` 경로로 처리할 수 있습니다.
+
 `init`은 깨끗한 project-owned planning skeleton을 타겟에 설치합니다. 기존 파일이 있으면 덮어쓰지 않고 중단합니다.
+설치되는 `AGENTS.md`에는 `Think Before Coding`, `Simplicity First`, `Surgical Changes`, `Goal-Driven Execution` 기본 지침이 포함됩니다.
 
 `upgrade`는 새 하네스 소스에서 타겟을 지정해 실행합니다. manifest에서 `harness-owned` 또는 `managed`로 분류된 파일만 갱신하고, `.planning/STATE.md`, `.planning/phases/**`, `.scratch/phase-state.json`처럼 프로젝트 진행 상태가 담기는 파일은 보존합니다. 하네스 소유 파일을 타겟에서 수정한 경우에는 `.harness/conflicts/**/*.new`에 새 버전을 남기고 충돌을 보고합니다.
 
