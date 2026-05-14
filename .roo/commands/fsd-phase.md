@@ -1,24 +1,22 @@
 ---
-description: Run one full phase lifecycle with recommended defaults
+description: Route one full phase lifecycle through the canonical phase gate
 argument-hint: <phase number or phase slug> [--chain]
-mode: architect
+mode: orchestrator
 ---
 
 Use the `workflow-phase-gate` skill for $ARGUMENTS.
 
 Apply `.roo/rules-orchestrator/rules.md` and `.roo/rules/phase-gate.md` first.
 
-`/fsd-phase` is the recommended one-command path for phase workflows.
+`/fsd-phase` is the recommended one-command entry point for phase workflows, but it must stay subtask-first:
 
-Expected behavior:
-
-1. Start with the phase-local `discuss` pass.
-2. Build the phase `plan` with `plan_id`, `allowed_paths`, and `verification`.
-3. Continue to `execute` in the same phase only when chain conditions are satisfied (`phase=execute`, `approved=true`, matching `plan_id`, and `automation_mode=chain`).
+1. Route the phase-local `discuss` pass to the owning planning mode.
+2. Route the phase `plan` work to the owning planning mode so it records `plan_id`, `allowed_paths`, acceptance criteria, and `verification`.
+3. Enter `execute` only through the canonical `workflow-phase-gate` chain checks and then create the owning implementation-mode handoff; the orchestrator does not implement inline.
 
 Usage examples:
 
 - `/fsd-phase 1 --chain`
 - `/fsd-phase 03-harness-distribution-enforcement --chain`
 
-If chain safety conditions are not satisfied, stop after planning and request approval/state correction instead of forcing execute.
+Do not restate or weaken `--chain` safety rules here. The canonical conditions are the `workflow-phase-gate` Automation Flags and Stop Conditions. If any required condition fails, stop before execute and request approval/state correction instead of forcing implementation.
